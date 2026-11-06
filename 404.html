@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecionando…</title>
+  </head>
+  <body>
+    <script>
+      // GitHub Pages serves 404.html for client-side routes such as /admin.
+      // Store the requested path and send the browser back to the app shell.
+      ;(function () {
+        var l = window.location
+        var segments = l.pathname.split('/').filter(Boolean)
+        var isGitHubProject =
+          /\.github\.io$/i.test(l.hostname) && segments.length > 1
+
+        var basePath = '/'
+        var rest = segments.join('/')
+
+        if (isGitHubProject) {
+          basePath = '/' + segments[0] + '/'
+          rest = segments.slice(1).join('/')
+        }
+
+        try {
+          sessionStorage.setItem('spa:redirect', rest + l.search + l.hash)
+        } catch (error) {
+          /* ignore */
+        }
+
+        l.replace(l.origin + basePath + '?/')
+      })()
+    </script>
+  </body>
+</html>
