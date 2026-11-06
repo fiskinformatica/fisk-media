@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Biblioteca de áudios e vídeos das aulas. Acesso com PIN mensal."
+    />
+    <meta name="theme-color" content="#fbfbfb" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Fisk Media · Biblioteca de áudios e vídeos</title>
+    <script>
+      ;(function () {
+        try {
+          var redirect = sessionStorage.getItem('spa:redirect')
+          if (redirect !== null) {
+            sessionStorage.removeItem('spa:redirect')
+            var base = window.location.pathname.replace(/\/+$/, '')
+            window.history.replaceState(null, '', base + '/' + redirect)
+          }
+        } catch (error) {
+          /* sessionStorage may be unavailable */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
