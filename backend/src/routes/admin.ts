@@ -291,4 +291,92 @@ app.post('/videos/reorder', async (c) => {
   }
 })
 
+// -------------------------------------------------------
+// PIN management
+// -------------------------------------------------------
+
+/**
+ * POST /api/admin/pins/teacher
+ * Updates the teacher PIN (requires admin authentication).
+ *
+ * Body: { pin: string }
+ */
+app.post('/pins/teacher', async (c) => {
+  let body: { pin?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ ok: false, error: 'Corpo inválido.' }, 400)
+  }
+
+  const { pin } = body
+
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    return c.json({ ok: false, error: 'PIN deve ter 4 dígitos.' }, 400)
+  }
+
+  try {
+    const { hashPassword } = await import('../utils/helpers.js')
+    const pinHash = await hashPassword(pin)
+
+    // Deactivate all previous teacher PINs
+    await c.env.DB
+      .prepare(`UPDATE teacher_pins SET active = 0 WHERE active = 1`)
+      .run()
+
+    // Insert new active PIN
+    await c.env.DB
+      .prepare(`INSERT INTO teacher_pins (pin_hash, active) VALUES (?, 1)`)
+      .bind(pinHash)
+      .run()
+
+    return c.json({ ok: true, data: { message: 'PIN de teacher atualizado com sucesso.' } })
+  } catch (err) {
+    const error = err as Error
+    return c.json({ ok: false, error: error.message }, 500)
+  }
+})
+
+/**
+ * POST /api/admin/pins/admin
+ * Updates the admin PIN (requires admin authentication).
+ *
+ * Body: { pin: string }
+ */
+app.post('/pins/admin', async (c) => {
+  let body: { pin?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ ok: false, error: 'Corpo inválido.' }, 400)
+  }
+
+  const { pin } = body
+
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    return c.json({ ok: false, error: 'PIN deve ter 4 dígitos.' }, 400)
+  }
+
+  try {
+    const { hashPassword } = await import('../utils/helpers.js')
+    const pinHash = await hashPassword(pin)
+
+    // Deactivate all previous admin PINs
+    await c.env.DB
+      .prepare(`UPDATE admin_pin SET active = 0 WHERE active = 1`)
+      .run()
+
+    // Insert new active PIN
+    await c.env.DB
+      .prepare(`INSERT INTO admin_pin (pin_hash, active) VALUES (?, 1)`)
+      .bind(pinHash)
+      .run()
+
+    return c.json({ ok: true, data: { message: 'PIN de admin atualizado com sucesso.' } })
+  } catch (err) {
+    const error = err as Error
+    return c.json({ ok: false, error: error.message }, 500)
+  }
+})
+
 export default app

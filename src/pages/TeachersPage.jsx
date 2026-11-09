@@ -7,14 +7,18 @@ import {
   KeyRound,
   Lock,
   LogOut,
+  Settings,
   ShieldCheck,
 } from 'lucide-react'
 import AdminPanel from '../components/AdminPanel.jsx'
 import Brand from '../components/Brand.jsx'
 import {
+  teacherLogin,
   adminLogin,
-  clearAdminToken,
+  teacherLogout,
   getAdminPinInfo,
+  updateTeacherPin,
+  updateAdminPin,
 } from '../services/apiService.js'
 
 const PIN_LENGTH = 4
@@ -43,12 +47,17 @@ function fallbackCopy(text) {
 }
 
 export default function TeachersPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [pin, setPin] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
   const [pinInfo, setPinInfo] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [newTeacherPin, setNewTeacherPin] = useState('')
+  const [newAdminPin, setNewAdminPin] = useState('')
+  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [settingsMessage, setSettingsMessage] = useState(null)
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -58,11 +67,20 @@ export default function TeachersPage() {
     setError(null)
 
     try {
-      const loginResult = await adminLogin(username.trim(), password)
+      // Try teacher login first
+      let loginResult = await teacherLogin(pin.trim())
 
       if (!loginResult.ok) {
-        setError(loginResult.error || 'Usuário ou senha incorretos.')
-        setPassword('')
+        // If teacher login fails, try admin login
+        loginResult = await adminLogin(pin.trim())
+        if (loginResult.ok) {
+          setIsAdmin(true)
+        }
+      }
+
+      if (!loginResult.ok) {
+        setError(loginResult.error || 'PIN incorreto.')
+        setPin('')
         return
       }
 
@@ -82,6 +100,50 @@ export default function TeachersPage() {
     }
   }
 
+  async function handleUpdateTeacherPin(e) {
+    e.preventDefault()
+    if (settingsLoading || newTeacherPin.length !== 4) return
+
+    setSettingsLoading(true)
+    setSettingsMessage(null)
+
+    try {
+      const result = await updateTeacherPin(newTeacherPin)
+      if (result.ok) {
+        setSettingsMessage({ type: 'success', text: 'PIN de teacher atualizado com sucesso!' })
+        setNewTeacherPin('')
+      } else {
+        setSettingsMessage({ type: 'error', text: result.error || 'Erro ao atualizar PIN.' })
+      }
+    } catch (err) {
+      setSettingsMessage({ type: 'error', text: err.message || 'Erro ao conectar ao servidor.' })
+    } finally {
+      setSettingsLoading(false)
+    }
+  }
+
+  async function handleUpdateAdminPin(e) {
+    e.preventDefault()
+    if (settingsLoading || newAdminPin.length !== 4) return
+
+    setSettingsLoading(true)
+    setSettingsMessage(null)
+
+    try {
+      const result = await updateAdminPin(newAdminPin)
+      if (result.ok) {
+        setSettingsMessage({ type: 'success', text: 'PIN de admin atualizado! Use o novo PIN no próximo login.' })
+        setNewAdminPin('')
+      } else {
+        setSettingsMessage({ type: 'error', text: result.error || 'Erro ao atualizar PIN.' })
+      }
+    } catch (err) {
+      setSettingsMessage({ type: 'error', text: err.message || 'Erro ao conectar ao servidor.' })
+    } finally {
+      setSettingsLoading(false)
+    }
+  }
+
   async function handleCopy() {
     if (!pinInfo) return
 
@@ -96,11 +158,12 @@ export default function TeachersPage() {
   }
 
   function handleLogout() {
-    clearAdminToken()
+    teacherLogout()
     setPinInfo(null)
-    setUsername('')
-    setPassword('')
+    setPin('')
+    setIsAdmin(false)
     setError(null)
+    setShowSettings(false)
   }
 
   if (!pinInfo) {
@@ -120,59 +183,41 @@ export default function TeachersPage() {
                 Área do professor
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-                Entre com suas credenciais de administrador.
+                Digite o PIN de 4 dígitos para acessar.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="teacher-username" className="sr-only">
-                    Usuário
-                  </label>
-                  <input
-                    id="teacher-username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    autoFocus
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value)
-                      if (error) setError(null)
-                    }}
-                    placeholder="Usuário"
-                    disabled={loading}
-                    className="field-control h-12"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="teacher-password" className="sr-only">
-                    Senha
-                  </label>
-                  <input
-                    id="teacher-password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      if (error) setError(null)
-                    }}
-                    placeholder="Senha"
-                    disabled={loading}
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={error ? 'teacher-login-error' : undefined}
-                    className="field-control h-12"
-                  />
-                </div>
+              <div>
+                <label htmlFor="teacher-pin" className="sr-only">
+                  PIN de acesso
+                </label>
+                <input
+                  id="teacher-pin"
+                  name="pin"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={PIN_LENGTH}
+                  autoComplete="off"
+                  autoFocus
+                  value={pin}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '')
+                    setPin(value)
+                    if (error) setError(null)
+                  }}
+                  placeholder="••••"
+                  disabled={loading}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'teacher-pin-error' : undefined}
+                  className="field-control h-14 text-center text-2xl font-medium tracking-[0.5em] tabular-nums"
+                />
               </div>
 
               {error && (
                 <p
-                  id="teacher-login-error"
+                  id="teacher-pin-error"
                   role="alert"
                   className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-red-600"
                 >
@@ -186,7 +231,7 @@ export default function TeachersPage() {
 
               <button
                 type="submit"
-                disabled={!username || !password || loading}
+                disabled={pin.length !== PIN_LENGTH || loading}
                 className="btn-primary mt-5 w-full"
               >
                 {loading ? 'Entrando...' : 'Entrar'}
@@ -281,6 +326,98 @@ export default function TeachersPage() {
             )}
           </div>
         </section>
+
+        {isAdmin && (
+          <section className="card-elevated animate-rise p-7 sm:p-8">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-brand-600" aria-hidden="true" />
+                <h2 className="text-lg font-semibold tracking-tight text-stone-900">
+                  Gerenciar PINs
+                </h2>
+              </div>
+            </div>
+
+            {settingsMessage && (
+              <div
+                className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+                  settingsMessage.type === 'success'
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-700'
+                }`}
+              >
+                {settingsMessage.text}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <form onSubmit={handleUpdateTeacherPin}>
+                <label className="mb-2 block text-sm font-medium text-stone-700">
+                  PIN de Teacher
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={newTeacherPin}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      setNewTeacherPin(value)
+                      if (settingsMessage) setSettingsMessage(null)
+                    }}
+                    placeholder="Novo PIN (4 dígitos)"
+                    disabled={settingsLoading}
+                    className="field-control h-12 flex-1 text-center text-lg font-medium tracking-widest tabular-nums"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newTeacherPin.length !== PIN_LENGTH || settingsLoading}
+                    className="btn-primary px-6"
+                  >
+                    {settingsLoading ? 'Salvando...' : 'Atualizar'}
+                  </button>
+                </div>
+              </form>
+
+              <form onSubmit={handleUpdateAdminPin}>
+                <label className="mb-2 block text-sm font-medium text-stone-700">
+                  PIN de Admin
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={newAdminPin}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      setNewAdminPin(value)
+                      if (settingsMessage) setSettingsMessage(null)
+                    }}
+                    placeholder="Novo PIN (4 dígitos)"
+                    disabled={settingsLoading}
+                    className="field-control h-12 flex-1 text-center text-lg font-medium tracking-widest tabular-nums"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newAdminPin.length !== PIN_LENGTH || settingsLoading}
+                    className="btn-primary px-6"
+                  >
+                    {settingsLoading ? 'Salvando...' : 'Atualizar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <p className="mt-4 text-xs leading-relaxed text-stone-400">
+              O PIN de teacher pode ser alterado a qualquer momento. <br />
+              O PIN de admin será usado no próximo login. Guarde com segurança!
+            </p>
+          </section>
+        )}
 
         <AdminPanel />
 

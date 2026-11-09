@@ -144,13 +144,31 @@ export async function validatePinApi(pin) {
 // -------------------------------------------------------
 
 /**
- * Admin login.
- * Returns: { ok: boolean, data: { token, username, expiresIn }, error }
+ * Teacher login with PIN.
+ * Returns: { ok: boolean, data: { token, role, expiresIn }, error }
  */
-export async function adminLogin(username, password) {
-  const result = await apiRequest('/api/auth/login', {
+export async function teacherLogin(pin) {
+  const result = await apiRequest('/api/auth/teacher', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ pin }),
+    auth: false,
+  })
+
+  if (result.ok && result.data?.token) {
+    setAdminToken(result.data.token)
+  }
+
+  return result
+}
+
+/**
+ * Admin login with PIN.
+ * Returns: { ok: boolean, data: { token, role, expiresIn }, error }
+ */
+export async function adminLogin(pin) {
+  const result = await apiRequest('/api/auth/admin', {
+    method: 'POST',
+    body: JSON.stringify({ pin }),
     auth: false,
   })
 
@@ -173,6 +191,39 @@ export async function verifyAdminToken() {
  */
 export function adminLogout() {
   clearAdminToken()
+}
+
+/**
+ * Teacher logout (alias for adminLogout).
+ */
+export function teacherLogout() {
+  clearAdminToken()
+}
+
+// -------------------------------------------------------
+// PIN management (admin only)
+// -------------------------------------------------------
+
+/**
+ * Updates the teacher PIN.
+ * Requires admin authentication.
+ */
+export async function updateTeacherPin(pin) {
+  return apiRequest('/api/admin/pins/teacher', {
+    method: 'POST',
+    body: JSON.stringify({ pin }),
+  })
+}
+
+/**
+ * Updates the admin PIN.
+ * Requires admin authentication.
+ */
+export async function updateAdminPin(pin) {
+  return apiRequest('/api/admin/pins/admin', {
+    method: 'POST',
+    body: JSON.stringify({ pin }),
+  })
 }
 
 // -------------------------------------------------------
