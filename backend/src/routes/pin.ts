@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../types.js'
-import { requireAdmin, rateLimitMiddleware } from '../middleware/index.js'
+import { requireAdmin, requireTeacherOrAdmin, rateLimitMiddleware } from '../middleware/index.js'
 import { getAdminPinInfo, rotateMonthlyPin, validateStudentPin } from '../services/pinService.js'
 
 const app = new Hono<{ Bindings: Env; Variables: { adminId: string; adminUsername: string } }>()
@@ -69,10 +69,10 @@ app.post(
 
 /**
  * GET /api/pin/info
- * Returns the current PIN for admin display.
- * Admin authentication required.
+ * Returns the current PIN for admin/teacher display.
+ * Teacher or Admin authentication required.
  */
-app.get('/info', requireAdmin, (c) => {
+app.get('/info', requireTeacherOrAdmin, (c) => {
   try {
     const info = getAdminPinInfo(c.env)
     return c.json({ ok: true, data: info })

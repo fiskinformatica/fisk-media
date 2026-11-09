@@ -71,6 +71,30 @@ export async function requireAdmin(
 }
 
 /**
+ * Teacher or Admin authentication middleware.
+ * Accepts both teacher and admin roles.
+ */
+export async function requireTeacherOrAdmin(
+  c: Context<{ Bindings: Env }>,
+  next: Next,
+): Promise<Response | void> {
+  const authHeader = c.req.header('Authorization')
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ ok: false, error: 'Autenticação necessária.' }, 401)
+  }
+
+  const token = authHeader.slice(7)
+  const payload = await verifyJwt(token, c.env.JWT_SECRET)
+
+  if (!payload || (payload['role'] !== 'admin' && payload['role'] !== 'teacher')) {
+    return c.json({ ok: false, error: 'Token inválido ou expirado.' }, 401)
+  }
+
+  await next()
+}
+
+/**
  * Rate limiting middleware using D1.
  * Allows up to `maxAttempts` per `windowSeconds` for a given key prefix.
  */
