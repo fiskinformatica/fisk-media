@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Play, Video } from 'lucide-react'
 import FolderSection from './FolderSection.jsx'
-import { getThumbnailUrl } from '../services/driveService.js'
+import { getThumbnailUrl } from '../services/apiService.js'
 import { readFolderOrder, sortGroupsByOrder } from '../utils/folderOrder.js'
 import { fileExtension, formatBytes } from '../utils/format.js'
 import { groupMediaByFolder } from '../utils/group.js'

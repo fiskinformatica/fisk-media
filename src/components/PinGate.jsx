@@ -1,17 +1,26 @@
 import { useState } from 'react'
 import { AlertCircle, KeyRound, Lock } from 'lucide-react'
 import Brand from './Brand.jsx'
-import { PIN_LENGTH } from '../config/access.js'
+
+const PIN_LENGTH = 4
 
 const MESSAGES = {
   invalid: 'Digite os quatro números do PIN.',
   incorrect: 'PIN incorreto. Confira com o professor.',
   expired: 'Esse PIN expirou. Peça o PIN do mês atual ao professor.',
+  error: 'Não foi possível validar o PIN. Verifique sua conexão.',
 }
 
+/**
+ * PinGate — student login screen.
+ *
+ * onAuthorize(pin) must return a Promise<{ ok, reason? }>
+ * because PIN validation now happens via the backend API.
+ */
 export default function PinGate({ onAuthorize, sessionExpired }) {
   const [pin, setPin] = useState('')
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   function handleChange(event) {
     const nextPin = event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
@@ -19,17 +28,26 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
     if (error) setError(null)
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const result = onAuthorize(pin)
+    if (loading) return
 
-    if (!result.ok) {
-      setError(result.reason)
-      setPin('')
+    setLoading(true)
+    setError(null)
+
+    try {
+      const result = await onAuthorize(pin)
+
+      if (!result.ok) {
+        setError(result.reason || 'incorrect')
+        setPin('')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
-  const message = error ? MESSAGES[error] : null
+  const message = error ? (MESSAGES[error] ?? MESSAGES.incorrect) : null
 
   return (
     <main className="flex min-h-svh items-center justify-center px-4 py-10">
@@ -72,10 +90,11 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
               autoFocus
               value={pin}
               onChange={handleChange}
+              disabled={loading}
               placeholder="••••"
               aria-invalid={Boolean(message)}
               aria-describedby={message ? 'pin-error' : undefined}
-              className="field-control h-14 text-center text-[26px] font-semibold tracking-[0.55em] placeholder:tracking-[0.4em] placeholder:text-stone-300"
+              className="field-control h-14 text-center text-[26px] font-semibold tracking-[0.55em] placeholder:tracking-[0.4em] placeholder:text-stone-300 disabled:opacity-50"
             />
 
             {message && (
@@ -94,10 +113,10 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
 
             <button
               type="submit"
-              disabled={pin.length !== PIN_LENGTH}
+              disabled={pin.length !== PIN_LENGTH || loading}
               className="btn-primary mt-5 w-full"
             >
-              Entrar
+              {loading ? 'Verificando...' : 'Entrar'}
             </button>
           </form>
 

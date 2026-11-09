@@ -1,0 +1,23 @@
+{
+  "name": "fisk-media-backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply fisk-media-db",
+    "db:migrate:local": "wrangler d1 migrations apply fisk-media-db --local",
+    "db:seed": "wrangler d1 execute fisk-media-db --file=./migrations/seed.sql",
+    "db:seed:local": "wrangler d1 execute fisk-media-db --local --file=./migrations/seed.sql",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^3.80.0"
+  }
+}

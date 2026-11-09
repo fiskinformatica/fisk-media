@@ -1,262 +1,382 @@
 # Fisk Media
 
-Biblioteca digital de áudios e vídeos das aulas, construída com React + Vite +
-Tailwind CSS e alimentada diretamente pelo Google Drive. O site é 100% estático
-(GitHub Pages), sem backend, banco de dados ou serviços adicionais.
+Biblioteca digital de áudios e vídeos das aulas Fisk, construída com React + Vite + Tailwind CSS no frontend e Cloudflare Workers + D1 + Google Drive no backend.
 
-## O que está implementado
+## Arquitetura
 
-- Montagem automática da biblioteca a partir de 13 pastas do Google Drive.
-- Leitura recursiva de subpastas, paginação da Drive API v3 e identificação de
-  áudios/vídeos por MIME type (com fallback por extensão).
-- Ordenação natural (numérica) de pastas e arquivos.
-- Ordenação manual das subpastas pela área do professor.
-- Seções de pastas recolhíveis, fechadas por padrão, para reduzir a rolagem.
-- Detecção de arquivos novos, removidos e renomeados entre sincronizações.
-- Sincronização automática a cada 15 minutos, atualização manual e cache local.
-- Biblioteca anterior mantida visível durante uma nova sincronização.
-- PIN global mensal de 4 dígitos, com aceitação opcional do PIN do mês anterior.
-- Persistência do estado de acesso no `localStorage` (sem salvar o PIN).
-- Área do professor em `/teachers` (e `/#/teachers`).
-- Player de áudio fixo com play/pause, anterior/próxima, progresso, duração,
-  volume, mudo e reprodução contínua.
-- Player de vídeo integrado com controles, tela cheia e fallback para o preview
-  oficial do Drive.
-- Interface mobile-first em vermelho Fisk e branco, minimalista e com ícones
-  Lucide.
+### Frontend
+- **React 19** + Vite
+- **Tailwind CSS 4**
+- **Lucide React** (ícones)
+- **GitHub Pages** (hospedagem estática)
 
-## Stack
+### Backend
+- **Cloudflare Workers** (runtime serverless)
+- **Hono** (framework web)
+- **Cloudflare D1** (banco SQLite)
+- **Google Drive API v3** (armazenamento via Service Account)
+- **TypeScript**
 
-- React 19 + Vite
-- JavaScript (JSX)
-- Tailwind CSS v4
-- Lucide React
-- Google Drive API v3
-- GitHub Pages
+### Fluxo de Dados
 
-## Começando
+1. **Armazenamento:** Arquivos de áudio/vídeo permanecem no Google Drive (13 pastas compartilhadas)
+2. **Backend:** Worker sincroniza metadados das pastas para o D1 e serve a API
+3. **Frontend:** Aplicação React consome a API e faz streaming direto via backend proxy
+4. **Administração:** Painel web para sincronização, organização e gerenciamento da biblioteca
+
+## Características
+
+- **PIN mensal:** Acesso dos alunos controlado por PIN de 4 dígitos renovado automaticamente
+- **Streaming otimizado:** Áudio e vídeo com suporte a HTTP Range (seek/skip)
+- **Sincronização inteligente:** Detecta arquivos novos, removidos e renomeados
+- **Organização persistente:** Ordem customizada de pastas e vídeos salva no banco
+- **Painel administrativo:** Controle total da biblioteca sem tocar no Drive
+- **Mobile-first:** Interface responsiva e otimizada para dispositivos móveis
+- **Sem banco de dados no frontend:** Toda a persistência migrada para o backend
+
+---
+
+## Início Rápido
+
+### Pré-requisitos
+
+- Node.js 18+
+- Conta Cloudflare (plano gratuito)
+- Projeto Google Cloud com Drive API v3
+- Service Account com as 13 pastas compartilhadas
+
+### 1. Clonar o repositório
 
 ```bash
+git clone https://github.com/fiskinformatica/fisk-media.git
+cd fisk-media
+```
+
+### 2. Configurar e iniciar o backend
+
+```bash
+cd backend
 npm install
-cp .env.example .env   # Windows: copy .env.example .env
+
+# Aplicar migrations locais
+npm run db:migrate:local
+npm run db:seed:local
+
+# Configurar .dev.vars (copie de .env.example e preencha)
+# Veja backend/README.md para detalhes
+
+# Iniciar o Worker localmente
 npm run dev
+# Backend rodando em http://localhost:8787
 ```
 
-Sem `VITE_GOOGLE_API_KEY`, a aplicação exibe uma tela de configuração — nenhum
-dado fictício é mostrado.
-
-## 1. Configurar a Google Drive API
-
-1. Acesse o [Google Cloud Console](https://console.cloud.google.com/) e crie (ou
-   selecione) um projeto.
-2. Em **APIs e serviços → Biblioteca**, habilite **Google Drive API**.
-3. Em **APIs e serviços → Credenciais**, crie uma **Chave de API**.
-4. Restrinja a chave:
-   - **Restrições de API:** Google Drive API.
-   - **Restrições de aplicativo:** Referenciadores HTTP. Adicione
-     `http://localhost:5173/*` e a URL do site, por exemplo
-     `https://SEU-USUARIO.github.io/fisk-media-player/*`.
-5. Crie o arquivo `.env` na raiz:
-
-```env
-VITE_GOOGLE_API_KEY=sua-chave-aqui
-```
-
-> A chave é embutida no JavaScript do site. Isso é aceitável apenas porque todos
-> os arquivos são públicos. As restrições por referenciador e por API reduzem o
-> uso indevido, mas não tornam a chave secreta em um site estático.
-
-### Compartilhamento das pastas
-
-A API key só consegue listar e reproduzir arquivos públicos. Compartilhe **as 13
-pastas e todo o conteúdo interno** com **Qualquer pessoa com o link · Leitor**.
-Se uma subpasta ou arquivo não estiver público, ele não aparecerá ou a
-reprodução falhará; a interface mostra o erro da pasta correspondente.
-
-### IDs verificados
-
-Os IDs abaixo foram conferidos contra os links originais do Drive. Os nomes
-retornados pelo Drive estão indicados entre parênteses.
-
-| Categoria | Pasta de áudios | Pasta de vídeos |
-| --- | --- | --- |
-| Essentials 1 | `1vsn1Wzpq-igaSo_L3LieedKDU03F5up9` (`01. Essentials 1`) | `16wwTRWEQ_1jo_NKX8dvdY0YyoNR-2U8q` (`01. Essentials 1`) |
-| Essentials 2 | `14ZbR6JL8GVnA7YMvlNfOXfxj7aoYjnQE` (`02. Essentials 2`) | `1DwvtCelTY5tPPPe1m-doEVneDsK-DgFw` (`02. Essentials 2`) |
-| Transitions 1 | `1MVN-pk1ARtNTq4hnqh_ZiXnIhL7zmFja` (`03. Transitions 1`) | `1AOr0fHh5GhvCf397EM-xtV8hMFI23tVg` (`03. Transitions 1`) |
-| Transitions 2 | `1OjqutogX1_iweEMvh72fLc5jGk6obove` (`04. Transitions 2`) | `1YW7T7jaSA-Z6FNybIuMLl4dhjiCVneoq` (`04. Transitions 2`) |
-| Fluency 1 | `1rtyh87_Xt_p30z4hEkSSMgYi1EDaDPFy` (`05. Fluency 1`) | `1uVNsPa037xAFm1hMuayoEAf9nmUsltBC` (`05. Fluency 1`) |
-| Fluency 2 | `1FnLhKEC4VLJehLz9Lrg9WAPsi1CACn9C` (`06. Fluency 2`) | `1jHxWwFwK1wFWCm1b6AP9ZjA4DJtWGfa-` (`06. Fluency 2`) |
-| In Focus | `1ci02_Qt2OdWM_WOK736zn6TJKn7I241A` (`07. In Focus`) | — (sem vídeos inicialmente) |
-
-Para adicionar uma nova categoria, basta incluir o objeto
-`{ name, id }` em `AUDIO_FOLDERS` e/ou `VIDEO_FOLDERS` em
-`src/config/drive.js`. Nenhuma outra alteração é necessária.
-
-## 2. PIN mensal e área do professor
-
-Configure os segredos no `.env` (ou nos secrets do GitHub Actions) antes de
-publicar:
-
-```env
-VITE_SECRET_SALT=um-segredo-longo-e-exclusivo
-VITE_STAFF_PASSWORD=1234
-VITE_OWNER_PASSWORD=9876
-```
-
-`VITE_STAFF_PASSWORD` e `VITE_OWNER_PASSWORD` são PINs de 4 dígitos. Use valores
-diferentes entre si e evite sequências óbvias.
-
-- O PIN tem exatamente 4 dígitos e é gerado de forma determinística a partir de
-  `mês + ano + VITE_SECRET_SALT`.
-- O PIN do mês atual é sempre aceito.
-- Com `ACCEPT_PREVIOUS_MONTH = true` (padrão), o PIN do mês anterior também é
-  aceito durante todo o mês atual.
-- PINs de meses mais antigos são tratados como expirados.
-- Ao acertar, o site salva em `localStorage` apenas
-  `{ authorized, period, expiresAt }` — nunca o PIN em texto puro.
-- A autorização vale até o fim do mês corrente. Ao expirar, o aluno precisa do
-  novo PIN com o professor.
-
-A área do professor fica em:
-
-- `/#/teachers` (funciona em qualquer hospedagem, inclusive GitHub Pages);
-- `/teachers` (funciona em desenvolvimento e, em produção, é redirecionado pelo
-  `404.html` para o app).
-
-A tela de login usa o mesmo estilo do PIN do aluno e pede o PIN de 4 dígitos
-`VITE_STAFF_PASSWORD`. Depois de entrar, ela mostra o PIN atual, o mês/ano de
-referência, o PIN do mês anterior (quando aplicável) e um botão para copiar.
-
-No fim da página fica o painel **Administração**, que pede o segundo PIN de 4
-dígitos, `VITE_OWNER_PASSWORD`. Só depois de desbloqueá-lo a sincronização e a
-ordem das pastas ficam disponíveis. Use **Sair** no painel para bloquear os
-controles novamente.
-
-A biblioteca tem um atalho **Área do professor** no cabeçalho e no rodapé. A
-página do professor também tem sempre um link de volta para a biblioteca.
-
-> **Limitação de segurança:** o site é estático. `VITE_SECRET_SALT`,
-> `VITE_STAFF_PASSWORD`, `VITE_OWNER_PASSWORD`, o algoritmo do PIN e a API key
-> chegam ao navegador do visitante. Os PINs são um controle casual de acesso,
-> não uma proteção contra usuários técnicos. Não armazene conteúdo sensível
-> nessa biblioteca.
-
-## 3. Sincronização e cache
-
-- Ao abrir a biblioteca, o cache local (`fisk.library.v1`) é exibido
-  imediatamente.
-- Se o cache tiver mais de 15 minutos, uma sincronização silenciosa é iniciada.
-- Um intervalo atualiza a biblioteca a cada 15 minutos.
-- O botão de sincronizar no painel **Administração** força uma nova
-  sincronização e só aparece após o PIN do administrador.
-- A versão anterior continua visível enquanto a nova é carregada.
-- Novos arquivos, removidos e renomeados são detectados por `id` e nome e
-  exibidos em um aviso discreto.
-- Falhas em uma pasta não interrompem as demais; o erro é mostrado na categoria.
-
-### Ordem das pastas
-
-No fim do painel **Administração**, o controle **Ordem das pastas** permite mover
-as subpastas de cada categoria para cima ou para baixo e restaurar a ordem
-natural. O painel inteiro só é liberado com a `VITE_OWNER_PASSWORD`. A
-configuração é salva no navegador e aplicada imediatamente à biblioteca.
-
-As seções de pastas na biblioteca começam recolhidas. Clique no cabeçalho da
-pasta para expandir ou recolher.
-
-> Como o site é estático, a ordem fica salva apenas no navegador em que foi
-> configurada. Ela não é compartilhada automaticamente entre dispositivos.
-
-Chaves usadas no `localStorage`:
-
-| Chave | Conteúdo |
-| --- | --- |
-| `fisk.library.v1` | Cache da biblioteca + horário da última sincronização |
-| `fisk.access.v1` | Estado de autorização e período de validade (sem PIN) |
-| `fisk.player.v1` | Volume do player de áudio |
-| `fisk.folderOrder.v1` | Ordem manual das pastas por tipo e categoria |
-
-## 4. Reprodução de mídia
-
-- Áudios e vídeos são servidos por
-  `https://www.googleapis.com/drive/v3/files/{id}?alt=media&key=...`.
-- Se o endpoint da API não estiver disponível, o áudio tenta o link público
-  `drive.usercontent.google.com`.
-- Se o `<video>` direto falhar, o modal troca automaticamente para o player
-  incorporado do Drive (`/file/d/{id}/preview`), que mantém controles e tela
-  cheia.
-- O navegador precisa suportar o codec do arquivo (por exemplo MP3/M4A para
-  áudio e MP4/WebM para vídeo). O Drive não transcodifica os arquivos.
-- Arquivos protegidos por "download desativado" ou fora do compartilhamento
-  público podem não reproduzir.
-
-## 5. Deploy no GitHub Pages
-
-### Via GitHub Actions (recomendado)
-
-1. Envie o projeto para um repositório no GitHub.
-2. Em **Settings → Secrets and variables → Actions → New repository secret**,
-   crie `VITE_GOOGLE_API_KEY`, `VITE_SECRET_SALT`, `VITE_STAFF_PASSWORD` e
-   `VITE_OWNER_PASSWORD` com os valores correspondentes.
-3. Em **Settings → Pages**, defina **Source: GitHub Actions**.
-4. Faça push para a branch `main`. O workflow
-   `.github/workflows/deploy.yml` executa `npm ci`, `npm run build` e publica o
-   conteúdo de `dist`.
-5. A URL será `https://SEU-USUARIO.github.io/NOME-DO-REPO/`.
-
-O Vite usa `base: './'`, então os assets funcionam tanto em project sites
-(`/nome-do-repo/`) quanto em domínios personalizados. O `public/404.html` trata
-rotas diretas como `/teachers`, e `public/.nojekyll` evita o processamento
-Jekyll.
-
-### Build manual
+### 3. Criar o primeiro administrador
 
 ```bash
+curl -X POST http://localhost:8787/api/auth/setup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "SuaSenhaForte123!",
+    "setupKey": "fisk-dev-setup-key-2024"
+  }'
+```
+
+### 4. Configurar e iniciar o frontend
+
+```bash
+cd ..
+npm install
+
+# Criar .env
+echo "VITE_API_URL=http://localhost:8787" > .env
+
+# Iniciar o frontend
+npm run dev
+# Frontend rodando em http://localhost:5173
+```
+
+### 5. Acessar a aplicação
+
+- **Biblioteca (alunos):** http://localhost:5173
+- **Área do professor:** http://localhost:5173/#/teachers
+
+**Credenciais de teste:**
+- Usuário admin: `admin` / `SuaSenhaForte123!`
+- PIN atual dos alunos: exibido no painel do professor após login
+
+---
+
+## Estrutura do Projeto
+
+```
+fisk-media/
+├── backend/                    # Cloudflare Worker API
+│   ├── migrations/            # Migrations D1
+│   │   ├── 0001_initial.sql  # Schema do banco
+│   │   └── seed.sql           # 13 pastas do Drive
+│   ├── src/
+│   │   ├── index.ts           # Entry point + cron
+│   │   ├── types.ts           # TypeScript types
+│   │   ├── middleware/        # CORS, JWT, rate limiting
+│   │   ├── routes/            # Rotas da API
+│   │   ├── services/          # Lógica de negócio
+│   │   └── utils/             # Helpers
+│   ├── wrangler.toml          # Configuração Cloudflare
+│   ├── .dev.vars              # Secrets locais (não commitado)
+│   └── package.json
+│
+├── src/                        # Frontend React
+│   ├── components/            # Componentes UI
+│   ├── hooks/                 # Hooks customizados
+│   ├── pages/                 # Páginas principais
+│   ├── services/              # Integração com API
+│   │   └── apiService.js     # Cliente HTTP
+│   ├── utils/                 # Utilitários
+│   └── config/                # Configurações
+│
+├── public/                     # Assets estáticos
+├── .env                        # Variáveis do frontend (não commitado)
+├── .env.example               # Template
+├── vite.config.js             # Configuração Vite
+├── tailwind.config.js         # Configuração Tailwind
+└── package.json
+```
+
+---
+
+## API Endpoints
+
+### Públicos (sem autenticação)
+
+- `GET /api/library` - Biblioteca completa
+- `POST /api/pin/validate` - Valida PIN do aluno (rate limited)
+- `GET /api/stream/:fileId` - Stream de áudio/vídeo
+- `GET /health` - Health check
+
+### Autenticação
+
+- `POST /api/auth/login` - Login admin → retorna JWT
+- `POST /api/auth/setup` - Cria primeiro admin (uso único)
+- `GET /api/auth/me` - Verifica token
+
+### Administração (requer JWT)
+
+- `GET /api/pin/info` - PIN atual
+- `POST /api/sync` - Sincronização manual
+- `GET /api/sync/history` - Histórico de sincronizações
+- `GET /api/admin/folders` - Lista pastas
+- `PATCH /api/admin/folders/:id` - Atualiza pasta
+- `GET /api/admin/videos` - Lista vídeos
+- `PATCH /api/admin/videos/:id` - Atualiza vídeo
+- _E mais..._
+
+Veja `backend/README.md` para documentação completa.
+
+---
+
+## Deploy
+
+### Backend (Cloudflare Workers)
+
+```bash
+cd backend
+
+# 1. Aplicar migrations em produção
+npm run db:migrate
+npm run db:seed
+
+# 2. Configurar secrets
+wrangler secret put GOOGLE_CLIENT_EMAIL
+wrangler secret put GOOGLE_PRIVATE_KEY
+wrangler secret put JWT_SECRET
+wrangler secret put SECRET_SALT
+wrangler secret put ADMIN_SETUP_KEY
+
+# 3. Deploy
+npm run deploy
+```
+
+O Worker estará em: `https://fisk-media-backend.crucialclock.workers.dev`
+
+### Frontend (GitHub Pages)
+
+```bash
+# 1. Configurar URL da API
+echo "VITE_API_URL=https://fisk-media-backend.crucialclock.workers.dev" > .env
+
+# 2. Build
 npm run build
-npm run preview
+
+# 3. Deploy
+npm run deploy
 ```
 
-Publique o conteúdo de `dist/` na hospedagem estática de sua preferência.
+O site estará em: `https://fiskinformatica.github.io/fisk-media`
 
-## 6. Estrutura do projeto
+**Ou use GitHub Actions:** Faça push para `main` e o workflow `.github/workflows/deploy.yml` fará o deploy automaticamente.
 
-```text
-src/
-  config/
-    access.js          # segredos vindos do .env e regra do PIN
-    drive.js           # pastas de áudio/vídeo, API key e intervalo de sync
-  services/
-    accessService.js   # geração/validação do PIN e persistência do acesso
-    driveService.js    # Drive API v3, recursão, paginação, cache diff e URLs
-  hooks/
-    useAccess.js       # estado de autorização
-    useAudioPlayer.js  # fila, controles e reprodução contínua
-    useLibrary.js      # sincronização, cache, progresso e alterações
-    useRoute.js        # rota /teachers sem dependência de router
-  components/          # UI reutilizável (players, listas, avisos, PIN etc.)
-  pages/
-    TeachersPage.jsx   # /teachers
-    LibraryPage.jsx    # gate do PIN + biblioteca
-  utils/               # formatação, grupos de pastas e localStorage
+---
+
+## Configuração do Google Drive
+
+### 1. Criar Service Account
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
+2. Crie ou selecione o projeto `fisk-media-player`
+3. Habilite **Google Drive API**
+4. Crie uma **Service Account**
+5. Baixe a chave JSON
+
+### 2. Compartilhar as 13 Pastas
+
+Compartilhe cada uma das 13 pastas com o email da Service Account:
+
+```
+fisk-media-backend@fisk-media-player.iam.gserviceaccount.com
 ```
 
-## 7. Checklist de teste manual
+Permissão: **Leitor**
 
-1. Configure a API key e confirme que as 13 pastas são consultadas.
-2. Abra cada categoria e confira a lista de arquivos reais e subpastas.
-3. Clique em um áudio: play/pause, progresso, volume, anterior/próxima e
-   reprodução contínua.
-4. Abra um vídeo: reprodução, controles, tela cheia e comportamento no celular.
-5. Gere o PIN em `/#/teachers` e valide na tela do aluno.
-6. Confirme que o PIN do mês anterior também é aceito e que um PIN antigo
-   retorna "expirado".
-7. Recarregue a página e confirme que o acesso persiste no `localStorage`.
-8. Adicione, remova e renomeie um arquivo no Drive; aguarde a sincronização (ou
-   use o botão no painel **Administração**) e confira o aviso de alterações.
-9. No painel **Administração**, desbloqueie com a `VITE_OWNER_PASSWORD`, reordene
-   as pastas e confirme a nova ordem na biblioteca. Recarregue e confirme que a
-   ordem permanece. Use **Sair** para bloquear o painel novamente.
-10. Confirme que as pastas começam recolhidas e que o cabeçalho expande e
-    recolhe cada uma.
-11. Teste uma pasta vazia e uma pasta sem permissão pública.
-12. Publique no GitHub Pages e valide `/#/teachers`, a biblioteca e a reprodução.
+### 3. IDs das Pastas
+
+Os IDs já estão configurados em `backend/migrations/seed.sql`:
+
+- **Áudio:** Essentials 1 e 2, Transitions 1 e 2, Fluency 1 e 2, In Focus
+- **Vídeo:** Essentials 1 e 2, Transitions 1 e 2, Fluency 1 e 2
+
+---
+
+## Segurança
+
+- **PINs dos alunos:** Hash PBKDF2-SHA256 (100k iterações) no D1
+- **Senhas admin:** Hash PBKDF2-SHA256 (100k iterações) no D1
+- **Sessões admin:** JWT HMAC-SHA256, expiração 7 dias
+- **Rate limiting:** 10 tentativas de PIN por 5 minutos (por IP)
+- **CORS:** Apenas frontend configurado
+- **Secrets:** Gerenciados via Wrangler (nunca no código)
+- **Streaming:** Autenticado via Service Account (não expõe credenciais)
+
+---
+
+## Funcionalidades
+
+### Para Alunos
+
+- Acesso via PIN mensal de 4 dígitos
+- Navegação por categorias (Essentials, Transitions, Fluency, In Focus)
+- Player de áudio fixo com controles completos
+- Player de vídeo modal com tela cheia
+- Busca e filtro por tipo de mídia
+- Reprodução contínua de áudios
+- Interface mobile-first
+
+### Para Professores
+
+- Login administrativo seguro
+- Visualização do PIN atual e anterior
+- Painel de sincronização com Google Drive
+- Histórico de sincronizações
+- Reordenação drag-and-drop de pastas e vídeos
+- Renomeação de títulos
+- Controle de visibilidade
+- Estatísticas da biblioteca
+
+---
+
+## Desenvolvimento
+
+### Frontend
+
+```bash
+npm run dev          # Servidor de desenvolvimento
+npm run build        # Build de produção
+npm run preview      # Preview do build
+npm run lint         # Oxlint
+```
+
+### Backend
+
+```bash
+npm run dev                  # Worker local
+npm run deploy               # Deploy para produção
+npm run db:migrate:local     # Migrations locais
+npm run db:seed:local        # Seed local
+npm run type-check           # TypeScript check
+```
+
+---
+
+## Troubleshooting
+
+### Backend não sincroniza
+
+1. Confirme que as pastas estão compartilhadas com a Service Account
+2. Verifique os logs: `wrangler tail`
+3. Teste a autenticação do Google Drive
+
+### Frontend não carrega a biblioteca
+
+1. Confirme que `VITE_API_URL` está definido no `.env`
+2. Verifique se o backend está rodando
+3. Abra o DevTools → Network para ver erros de API
+
+### Streaming não funciona
+
+1. Teste o endpoint `/api/stream/:fileId` diretamente
+2. Confirme que os arquivos estão compartilhados
+3. Verifique CORS no backend
+
+### PIN não valida
+
+1. Confirme que `SECRET_SALT` é o mesmo no backend e no cron
+2. Verifique se o PIN não expirou
+3. Consulte o PIN atual em `/api/pin/info` (requer admin)
+
+---
+
+## Tecnologias
+
+**Frontend:**
+- React 19
+- Vite 8
+- Tailwind CSS 4
+- Lucide React
+
+**Backend:**
+- Cloudflare Workers
+- Hono 4
+- Cloudflare D1 (SQLite)
+- TypeScript 5
+
+**APIs Externas:**
+- Google Drive API v3 (OAuth2 Service Account)
+
+**Infraestrutura:**
+- GitHub Pages (frontend)
+- Cloudflare Workers (backend)
+- Cloudflare D1 (banco)
+
+---
+
+## Licença
+
+Uso interno da Fisk Informática.
+
+---
+
+## Suporte
+
+Para problemas ou dúvidas:
+
+1. Consulte `backend/README.md` para documentação detalhada do backend
+2. Veja os logs do Worker: `wrangler tail`
+3. Verifique o status do D1: `wrangler d1 info fisk-media-db`
+
+---
+
+## Créditos
+
+Desenvolvido para Fisk Informática.
+
+Stack: React, Vite, Tailwind CSS, Cloudflare Workers, Hono, D1, Google Drive API.

@@ -152,8 +152,8 @@ export default function LibraryBrowser({ onLock }) {
 
         {!apiConfigured && hasData && (
           <InlineWarning>
-            A chave da API não está configurada. A biblioteca salva está sendo
-            exibida, mas a sincronização e a reprodução podem falhar.
+            A URL da API não está configurada. A biblioteca salva está sendo
+            exibida, mas ela pode estar desatualizada.
           </InlineWarning>
         )}
 
@@ -218,7 +218,7 @@ export default function LibraryBrowser({ onLock }) {
               ) : (
                 <EmptyState
                   title="Nenhuma categoria"
-                  description="Adicione uma pasta em src/config/drive.js para começar."
+                  description="Configure o backend e sincronize a biblioteca para começar."
                 />
               )}
             </section>

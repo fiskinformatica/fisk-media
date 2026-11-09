@@ -8,28 +8,22 @@ import {
   Lock,
   LogOut,
   ShieldCheck,
-  TriangleAlert,
 } from 'lucide-react'
 import AdminPanel from '../components/AdminPanel.jsx'
 import Brand from '../components/Brand.jsx'
 import {
-  OWNER_PASSWORD,
-  PIN_LENGTH,
-  SECRET_SALT,
-  STAFF_PASSWORD,
-} from '../config/access.js'
-import { getAdminPinInfo } from '../services/accessService.js'
+  adminLogin,
+  clearAdminToken,
+  getAdminPinInfo,
+} from '../services/apiService.js'
 
-const USING_DEFAULTS =
-  SECRET_SALT === 'ALTERE-ESTE-SEGREDO' ||
-  STAFF_PASSWORD === '0000' ||
-  OWNER_PASSWORD === '9999'
+const PIN_LENGTH = 4
 
-function formatValidUntil(date) {
+function formatValidUntil(isoDate) {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
-  }).format(date)
+  }).format(new Date(isoDate))
 }
 
 function fallbackCopy(text) {
@@ -48,43 +42,44 @@ function fallbackCopy(text) {
   }
 }
 
-function SecurityNote() {
-  return (
-    <div className="flex items-start gap-2 px-2 text-[11px] leading-relaxed text-stone-400">
-      <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <p>
-        Este painel é um controle casual de acesso. Como o site é estático, os
-        PINs e o segredo podem ser inspecionados no navegador. Não use como
-        proteção forte.
-      </p>
-    </div>
-  )
-}
-
 export default function TeachersPage() {
-  const [pin, setPin] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [pinInfo, setPinInfo] = useState(null)
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  function handleChange(event) {
-    const nextPin = event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
-    setPin(nextPin)
-    if (error) setError(null)
-  }
-
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    if (loading) return
 
-    if (pin !== STAFF_PASSWORD) {
-      setError('PIN incorreto.')
-      setPin('')
-      return
-    }
-
+    setLoading(true)
     setError(null)
-    setPin('')
-    setPinInfo(getAdminPinInfo())
+
+    try {
+      const loginResult = await adminLogin(username.trim(), password)
+
+      if (!loginResult.ok) {
+        setError(loginResult.error || 'Usuário ou senha incorretos.')
+        setPassword('')
+        return
+      }
+
+      // Fetch PIN info after successful login
+      const pinResult = await getAdminPinInfo()
+
+      if (pinResult.ok) {
+        setPinInfo(pinResult.data)
+      } else {
+        // Logged in but couldn't fetch PIN — still proceed
+        setPinInfo({ currentPin: '----', previousPin: '----', monthLabel: 'Carregando...', validUntil: null })
+      }
+    } catch (err) {
+      setError(err.message || 'Erro ao conectar ao servidor.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleCopy() {
@@ -101,8 +96,11 @@ export default function TeachersPage() {
   }
 
   function handleLogout() {
+    clearAdminToken()
     setPinInfo(null)
-    setPin('')
+    setUsername('')
+    setPassword('')
+    setError(null)
   }
 
   if (!pinInfo) {
@@ -122,34 +120,59 @@ export default function TeachersPage() {
                 Área do professor
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-                Digite o PIN do professor para consultar o PIN mensal dos alunos.
+                Entre com suas credenciais de administrador.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
-              <label htmlFor="teacher-pin" className="sr-only">
-                PIN do professor de {PIN_LENGTH} dígitos
-              </label>
-              <input
-                id="teacher-pin"
-                name="teacher-pin"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                pattern="[0-9]*"
-                maxLength={PIN_LENGTH}
-                autoFocus
-                value={pin}
-                onChange={handleChange}
-                placeholder="••••"
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'teacher-pin-error' : undefined}
-                className="field-control h-14 text-center text-[26px] font-semibold tracking-[0.55em] placeholder:tracking-[0.4em] placeholder:text-stone-300"
-              />
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="teacher-username" className="sr-only">
+                    Usuário
+                  </label>
+                  <input
+                    id="teacher-username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    autoFocus
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value)
+                      if (error) setError(null)
+                    }}
+                    placeholder="Usuário"
+                    disabled={loading}
+                    className="field-control h-12"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="teacher-password" className="sr-only">
+                    Senha
+                  </label>
+                  <input
+                    id="teacher-password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (error) setError(null)
+                    }}
+                    placeholder="Senha"
+                    disabled={loading}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? 'teacher-login-error' : undefined}
+                    className="field-control h-12"
+                  />
+                </div>
+              </div>
 
               {error && (
                 <p
-                  id="teacher-pin-error"
+                  id="teacher-login-error"
                   role="alert"
                   className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-red-600"
                 >
@@ -163,10 +186,10 @@ export default function TeachersPage() {
 
               <button
                 type="submit"
-                disabled={pin.length !== PIN_LENGTH}
+                disabled={!username || !password || loading}
                 className="btn-primary mt-5 w-full"
               >
-                Entrar
+                {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
 
@@ -242,11 +265,13 @@ export default function TeachersPage() {
           </button>
 
           <div className="mt-5 space-y-2 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-            <p>
-              Válido até {formatValidUntil(pinInfo.validUntil)}. Um novo PIN é
-              gerado no início do próximo mês.
-            </p>
-            {pinInfo.acceptsPreviousMonth && (
+            {pinInfo.validUntil && (
+              <p>
+                Válido até {formatValidUntil(pinInfo.validUntil)}. Um novo PIN é
+                gerado no início do próximo mês.
+              </p>
+            )}
+            {pinInfo.previousPin && pinInfo.previousPin !== '----' && (
               <p>
                 O PIN do mês anterior também é aceito:{' '}
                 <strong className="font-medium text-stone-700">
@@ -255,26 +280,17 @@ export default function TeachersPage() {
               </p>
             )}
           </div>
-
-          {USING_DEFAULTS && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200/70 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800">
-              <TriangleAlert
-                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
-                aria-hidden="true"
-              />
-              <span>
-                O PIN ou o segredo padrão ainda estão em uso. Defina{' '}
-                <code>VITE_SECRET_SALT</code>, <code>VITE_STAFF_PASSWORD</code>{' '}
-                e <code>VITE_OWNER_PASSWORD</code> no <code>.env</code> antes de
-                publicar.
-              </span>
-            </div>
-          )}
         </section>
 
         <AdminPanel />
 
-        <SecurityNote />
+        <div className="flex items-start gap-2 px-2 text-[11px] leading-relaxed text-stone-400">
+          <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <p>
+            Este painel é protegido por autenticação via backend. As credenciais
+            não ficam expostas no navegador.
+          </p>
+        </div>
       </div>
     </main>
   )

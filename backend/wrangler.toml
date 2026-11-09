@@ -1,0 +1,45 @@
+# Fisk Media - Backend Cloudflare Workers
+
+name = "fisk-media-backend"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# -------------------------------------------------------
+# D1 Database
+# -------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "fisk-media-db"
+database_id = "09b16bdf-fe0a-4ef3-b682-59675d3f3887"
+
+# -------------------------------------------------------
+# Cron Trigger
+# Runs on the 1st of every month at midnight UTC
+# - Rotates the monthly student PIN
+# - Syncs the library with Google Drive
+# -------------------------------------------------------
+[triggers]
+crons = ["0 0 1 * *"]
+
+# -------------------------------------------------------
+# Environment Variables (Non-Secret)
+# -------------------------------------------------------
+[vars]
+FRONTEND_URL = "*"
+
+# -------------------------------------------------------
+# Production Environment
+# -------------------------------------------------------
+[env.production]
+vars = { FRONTEND_URL = "*" }
+
+# -------------------------------------------------------
+# Secrets (Set via `wrangler secret put <NAME>`)
+# -------------------------------------------------------
+# Required secrets:
+# - GOOGLE_CLIENT_EMAIL: Service Account email
+# - GOOGLE_PRIVATE_KEY: Service Account private key (PEM format)
+# - JWT_SECRET: Secret for signing admin JWT tokens (use: openssl rand -hex 32)
+# - SECRET_SALT: Salt for generating monthly PINs (must match frontend if migrating)
+# - ADMIN_SETUP_KEY: Key for creating the first admin (one-time use)

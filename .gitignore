@@ -17,6 +17,11 @@ dist-ssr
 .env.*
 !.env.example
 
+# Service account keys — NEVER commit
+*-f19f4806d8d9.json
+*service-account*.json
+fisk-media-player-*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

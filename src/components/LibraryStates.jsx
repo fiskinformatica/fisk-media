@@ -41,23 +41,25 @@ export function SetupState() {
         Configuração necessária
       </h2>
       <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-        Conecte a biblioteca à Google Drive adicionando a chave da API ao
-        ambiente e gerando o site novamente.
+        Configure a URL do backend para conectar a biblioteca.
       </p>
 
       <div className="mt-5 overflow-x-auto rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-left">
         <code className="text-xs text-brand-700">
-          VITE_GOOGLE_API_KEY=sua-chave
+          VITE_API_URL=https://seu-worker.workers.dev
         </code>
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-stone-400">
-        Crie a chave no Google Cloud Console com a Drive API v3 habilitada. As 13
-        pastas já estão configuradas em{' '}
+        Defina{' '}
         <code className="rounded bg-stone-100 px-1 py-0.5 text-[11px] text-stone-600">
-          src/config/drive.js
-        </code>
-        .
+          VITE_API_URL
+        </code>{' '}
+        no arquivo{' '}
+        <code className="rounded bg-stone-100 px-1 py-0.5 text-[11px] text-stone-600">
+          .env
+        </code>{' '}
+        e gere o site novamente.
       </p>
     </div>
   )

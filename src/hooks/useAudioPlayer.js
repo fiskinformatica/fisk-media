@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getMediaFallbackUrl, getMediaUrl } from '../services/driveService.js'
+import { getMediaFallbackUrl, getMediaUrl } from '../services/apiService.js'
 import { readJson, writeJson } from '../utils/storage.js'
 
 const PLAYER_STORAGE_KEY = 'fisk.player.v1'

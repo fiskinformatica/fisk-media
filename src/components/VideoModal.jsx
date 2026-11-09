@@ -4,7 +4,7 @@ import {
   getDrivePreviewUrl,
   getDriveViewUrl,
   getMediaUrl,
-} from '../services/driveService.js'
+} from '../services/apiService.js'
 
 export default function VideoModal({ item, onClose }) {
   const [useDrivePreview, setUseDrivePreview] = useState(false)
