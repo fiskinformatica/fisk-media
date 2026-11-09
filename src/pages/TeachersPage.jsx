@@ -19,6 +19,7 @@ import {
   getAdminPinInfo,
   updateTeacherPin,
   updateAdminPin,
+  updateStudentPin,
 } from '../services/apiService.js'
 
 const PIN_LENGTH = 4
@@ -56,6 +57,7 @@ export default function TeachersPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [newTeacherPin, setNewTeacherPin] = useState('')
   const [newAdminPin, setNewAdminPin] = useState('')
+  const [newStudentPin, setNewStudentPin] = useState('')
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsMessage, setSettingsMessage] = useState(null)
 
@@ -134,6 +136,33 @@ export default function TeachersPage() {
       if (result.ok) {
         setSettingsMessage({ type: 'success', text: 'PIN de admin atualizado! Use o novo PIN no próximo login.' })
         setNewAdminPin('')
+      } else {
+        setSettingsMessage({ type: 'error', text: result.error || 'Erro ao atualizar PIN.' })
+      }
+    } catch (err) {
+      setSettingsMessage({ type: 'error', text: err.message || 'Erro ao conectar ao servidor.' })
+    } finally {
+      setSettingsLoading(false)
+    }
+  }
+
+  async function handleUpdateStudentPin(e) {
+    e.preventDefault()
+    if (settingsLoading || newStudentPin.length !== 4) return
+
+    setSettingsLoading(true)
+    setSettingsMessage(null)
+
+    try {
+      const result = await updateStudentPin(newStudentPin)
+      if (result.ok) {
+        setSettingsMessage({ type: 'success', text: 'PIN de aluno atualizado com sucesso!' })
+        setNewStudentPin('')
+        // Refresh PIN info to show the new current PIN
+        const pinResult = await getAdminPinInfo()
+        if (pinResult.ok) {
+          setPinInfo(pinResult.data)
+        }
       } else {
         setSettingsMessage({ type: 'error', text: result.error || 'Erro ao atualizar PIN.' })
       }
@@ -410,11 +439,42 @@ export default function TeachersPage() {
                   </button>
                 </div>
               </form>
+
+              <form onSubmit={handleUpdateStudentPin}>
+                <label className="mb-2 block text-sm font-medium text-stone-700">
+                  PIN de Aluno (mês atual)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={newStudentPin}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      setNewStudentPin(value)
+                      if (settingsMessage) setSettingsMessage(null)
+                    }}
+                    placeholder="Novo PIN (4 dígitos)"
+                    disabled={settingsLoading}
+                    className="field-control h-12 flex-1 text-center text-lg font-medium tracking-widest tabular-nums"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newStudentPin.length !== PIN_LENGTH || settingsLoading}
+                    className="btn-primary px-6"
+                  >
+                    {settingsLoading ? 'Salvando...' : 'Atualizar'}
+                  </button>
+                </div>
+              </form>
             </div>
 
             <p className="mt-4 text-xs leading-relaxed text-stone-400">
               O PIN de teacher pode ser alterado a qualquer momento. <br />
-              O PIN de admin será usado no próximo login. Guarde com segurança!
+              O PIN de admin será usado no próximo login. Guarde com segurança! <br />
+              O PIN de aluno substitui o PIN automático do mês atual.
             </p>
           </section>
         )}

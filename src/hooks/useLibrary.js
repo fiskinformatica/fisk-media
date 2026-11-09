@@ -4,7 +4,7 @@ import { diffLibraries } from '../services/driveService.js'
 import { readJson, writeJson } from '../utils/storage.js'
 
 const CACHE_KEY = 'fisk.library.v2'
-const CACHE_MAX_AGE_MS = 5 * 60 * 1000  // 5 minutes (matches backend Cache-Control)
+const CACHE_MAX_AGE_MS = 15 * 60 * 1000  // 15 minutes (original fast version)
 
 function readCache() {
   const cache = readJson(CACHE_KEY)

@@ -379,4 +379,62 @@ app.post('/pins/admin', async (c) => {
   }
 })
 
+/**
+ * POST /api/admin/pins/student
+ * Manually sets the student PIN for the current month (requires admin authentication).
+ * This overrides the automatic generation for the current month only.
+ *
+ * Body: { pin: string }
+ */
+app.post('/pins/student', async (c) => {
+  let body: { pin?: string }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ ok: false, error: 'Corpo inválido.' }, 400)
+  }
+
+  const { pin } = body
+
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    return c.json({ ok: false, error: 'PIN deve ter 4 dígitos.' }, 400)
+  }
+
+  try {
+    const { hashPassword, monthKeyOf, startOfNextMonth } = await import('../utils/helpers.js')
+    const pinHash = await hashPassword(pin)
+    
+    const now = new Date()
+    const periodKey = monthKeyOf(now)
+    const validFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const validUntil = startOfNextMonth(now).toISOString()
+
+    // Deactivate all current active codes
+    await c.env.DB
+      .prepare(`UPDATE access_codes SET active = 0`)
+      .run()
+
+    // Insert new code for current month
+    await c.env.DB
+      .prepare(
+        `INSERT INTO access_codes (code_hash, valid_from, valid_until, active)
+         VALUES (?, ?, ?, 1)`,
+      )
+      .bind(pinHash, validFrom, validUntil)
+      .run()
+
+    return c.json({ 
+      ok: true, 
+      data: { 
+        message: 'PIN de aluno atualizado com sucesso.', 
+        period: periodKey,
+        validUntil 
+      } 
+    })
+  } catch (err) {
+    const error = err as Error
+    return c.json({ ok: false, error: error.message }, 500)
+  }
+})
+
 export default app
