@@ -83,29 +83,62 @@ export async function runSync(env: Env, triggeredBy: 'admin' | 'cron' = 'admin')
         }
       }
 
+      // Fetch existing subfolders for this category in batch
+      const { results: existingSubfolders } = await db
+        .prepare(`SELECT id, path_key FROM subfolders WHERE folder_id = ?`)
+        .bind(category.id)
+        .all<{ id: number; path_key: string }>()
+
+      const existingSubfolderMap = new Map(existingSubfolders?.map(s => [s.path_key, s.id]) ?? [])
+
+      // Prepare insert statements for new subfolders
+      const subfolderInserts: D1PreparedStatement[] = []
+      
       for (const pathKey of uniquePaths) {
-        const segments = pathKey.split(' / ')
-        const name = segments[segments.length - 1]!
-
-        const existing = await db
-          .prepare(`SELECT id FROM subfolders WHERE folder_id = ? AND path_key = ?`)
-          .bind(category.id, pathKey)
-          .first<{ id: number }>()
-
-        if (existing) {
-          subfolderMap.set(pathKey, existing.id)
+        const existingId = existingSubfolderMap.get(pathKey)
+        
+        if (existingId) {
+          subfolderMap.set(pathKey, existingId)
         } else {
-          const inserted = await db
-            .prepare(
-              `INSERT INTO subfolders (folder_id, path_key, name) VALUES (?, ?, ?) RETURNING id`,
-            )
-            .bind(category.id, pathKey, name)
-            .first<{ id: number }>()
-          subfolderMap.set(pathKey, inserted!.id)
+          const segments = pathKey.split(' / ')
+          const name = segments[segments.length - 1]!
+          
+          subfolderInserts.push(
+            db.prepare(
+              `INSERT INTO subfolders (folder_id, path_key, name) VALUES (?, ?, ?)`
+            ).bind(category.id, pathKey, name)
+          )
         }
       }
 
-      // Upsert videos
+      // Execute subfolder inserts in batch
+      if (subfolderInserts.length > 0) {
+        await db.batch(subfolderInserts)
+        
+        // Fetch newly inserted subfolders
+        const { results: newSubfolders } = await db
+          .prepare(`SELECT id, path_key FROM subfolders WHERE folder_id = ?`)
+          .bind(category.id)
+          .all<{ id: number; path_key: string }>()
+        
+        for (const subfolder of newSubfolders ?? []) {
+          subfolderMap.set(subfolder.path_key, subfolder.id)
+        }
+      }
+
+      // Fetch all existing files in this category at once (batch optimization)
+      const { results: existingVideos } = await db
+        .prepare(`SELECT drive_file_id, id, sort_order FROM videos WHERE folder_id = ?`)
+        .bind(category.id)
+        .all<{ drive_file_id: string; id: number; sort_order: number }>()
+
+      const existingMap = new Map(existingVideos?.map(v => [v.drive_file_id, v]) ?? [])
+
+      // Prepare batch statements
+      const updateStatements: D1PreparedStatement[] = []
+      const insertStatements: D1PreparedStatement[] = []
+
+      // Process all items in this category
       for (let i = 0; i < category.items.length; i++) {
         const item = category.items[i]!
         driveFileIds.add(item.id)
@@ -114,15 +147,12 @@ export async function runSync(env: Env, triggeredBy: 'admin' | 'cron' = 'admin')
         const pathKey = item.path.length > 0 ? item.path.join(' / ') : null
         const subfolderIdValue = pathKey ? (subfolderMap.get(pathKey) ?? null) : null
 
-        const existing = await db
-          .prepare(`SELECT id, sort_order FROM videos WHERE drive_file_id = ?`)
-          .bind(item.id)
-          .first<{ id: number; sort_order: number }>()
+        const existing = existingMap.get(item.id)
 
         if (existing) {
           // Update metadata but preserve admin-set sort_order and visible
-          await db
-            .prepare(`
+          updateStatements.push(
+            db.prepare(`
               UPDATE videos
               SET
                 folder_id = ?,
@@ -146,11 +176,11 @@ export async function runSync(env: Env, triggeredBy: 'admin' | 'cron' = 'admin')
               item.modifiedTime,
               item.id,
             )
-            .run()
+          )
         } else {
           // New file — title defaults to drive_name, admin can rename later
-          await db
-            .prepare(`
+          insertStatements.push(
+            db.prepare(`
               INSERT INTO videos (
                 drive_file_id, folder_id, subfolder_id, title, drive_name,
                 mime_type, kind, size_bytes, modified_time, sort_order, available
@@ -168,9 +198,17 @@ export async function runSync(env: Env, triggeredBy: 'admin' | 'cron' = 'admin')
               item.modifiedTime,
               i,
             )
-            .run()
+          )
           filesAdded++
         }
+      }
+
+      // Execute all updates and inserts in batches
+      if (updateStatements.length > 0) {
+        await db.batch(updateStatements)
+      }
+      if (insertStatements.length > 0) {
+        await db.batch(insertStatements)
       }
     }
 
@@ -181,14 +219,21 @@ export async function runSync(env: Env, triggeredBy: 'admin' | 'cron' = 'admin')
       .all<{ drive_file_id: string }>()
 
     let filesRemoved = 0
+    const removeStatements: D1PreparedStatement[] = []
+    
     for (const { drive_file_id } of availableFiles ?? []) {
       if (!driveFileIds.has(drive_file_id)) {
-        await db
-          .prepare(`UPDATE videos SET available = 0, updated_at = datetime('now') WHERE drive_file_id = ?`)
-          .bind(drive_file_id)
-          .run()
+        removeStatements.push(
+          db.prepare(`UPDATE videos SET available = 0, updated_at = datetime('now') WHERE drive_file_id = ?`)
+            .bind(drive_file_id)
+        )
         filesRemoved++
       }
+    }
+
+    // Execute all removals in batch
+    if (removeStatements.length > 0) {
+      await db.batch(removeStatements)
     }
 
     const durationMs = Date.now() - startTime

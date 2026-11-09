@@ -10,13 +10,15 @@ function readRoute() {
   const hash = normalize(window.location.hash.replace(/^#/, '').split('?')[0])
 
   if (hash) {
-    return hash === '/teachers' || hash.endsWith('/teachers')
-      ? 'teachers'
-      : 'library'
+    if (hash === '/teachers' || hash.endsWith('/teachers')) return 'teachers'
+    if (hash === '/students' || hash.endsWith('/students')) return 'students'
+    return 'library'
   }
 
   const path = normalize(window.location.pathname)
-  return /(^|\/)teachers$/.test(path) ? 'teachers' : 'library'
+  if (/(^|\/)teachers$/.test(path)) return 'teachers'
+  if (/(^|\/)students$/.test(path)) return 'students'
+  return 'library'
 }
 
 export function useRoute() {

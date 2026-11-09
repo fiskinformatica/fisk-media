@@ -226,6 +226,17 @@ export async function updateAdminPin(pin) {
   })
 }
 
+/**
+ * Updates the student PIN for the current month.
+ * Requires admin authentication.
+ */
+export async function updateStudentPin(pin) {
+  return apiRequest('/api/admin/pins/student', {
+    method: 'POST',
+    body: JSON.stringify({ pin }),
+  })
+}
+
 // -------------------------------------------------------
 // Admin PIN info
 // -------------------------------------------------------
@@ -347,20 +358,34 @@ export async function reorderVideos(orders) {
 }
 
 // -------------------------------------------------------
-// Media streaming
+// Media streaming (DIRECT from Google Drive)
 // -------------------------------------------------------
+
+const DRIVE_API_BASE = 'https://drive.googleapis.com/drive/v3'
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
 
 /**
  * Returns the streaming URL for a file.
- * Uses the backend proxy for authentication.
+ * DIRECT from Google Drive - NO backend proxy.
+ * This is the FAST path for media playback.
  */
 export function getMediaUrl(fileId) {
-  return `${API_BASE_URL}/api/stream/${encodeURIComponent(fileId)}`
+  // If API key is configured, use direct Google Drive API access
+  if (GOOGLE_API_KEY) {
+    const params = new URLSearchParams({
+      alt: 'media',
+      key: GOOGLE_API_KEY,
+    })
+    return `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}?${params.toString()}`
+  }
+  
+  // Fallback to usercontent domain (no API key required)
+  return getMediaFallbackUrl(fileId)
 }
 
 /**
  * Returns the fallback media URL (direct from Drive with usercontent domain).
- * Used as fallback if the backend stream fails.
+ * Used as fallback if API key is not configured or if the primary method fails.
  */
 export function getMediaFallbackUrl(fileId) {
   return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(fileId)}&export=download&confirm=t`
