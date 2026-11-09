@@ -358,34 +358,21 @@ export async function reorderVideos(orders) {
 }
 
 // -------------------------------------------------------
-// Media streaming (DIRECT from Google Drive)
+// Media streaming (via optimized backend proxy)
 // -------------------------------------------------------
-
-const DRIVE_API_BASE = 'https://drive.googleapis.com/drive/v3'
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
 
 /**
  * Returns the streaming URL for a file.
- * DIRECT from Google Drive - NO backend proxy.
- * This is the FAST path for media playback.
+ * Uses backend proxy (required due to CORS and modern browser security).
+ * Backend implements efficient streaming with Range support.
  */
 export function getMediaUrl(fileId) {
-  // If API key is configured, use direct Google Drive API access
-  if (GOOGLE_API_KEY) {
-    const params = new URLSearchParams({
-      alt: 'media',
-      key: GOOGLE_API_KEY,
-    })
-    return `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}?${params.toString()}`
-  }
-  
-  // Fallback to usercontent domain (no API key required)
-  return getMediaFallbackUrl(fileId)
+  return `${API_BASE_URL}/api/stream/${encodeURIComponent(fileId)}`
 }
 
 /**
  * Returns the fallback media URL (direct from Drive with usercontent domain).
- * Used as fallback if API key is not configured or if the primary method fails.
+ * Used as fallback if the backend stream fails.
  */
 export function getMediaFallbackUrl(fileId) {
   return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(fileId)}&export=download&confirm=t`
