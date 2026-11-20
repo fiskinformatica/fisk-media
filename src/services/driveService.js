@@ -355,15 +355,15 @@ export function getApiMediaUrl(fileId) {
 }
 
 export function getMediaUrl(fileId) {
-  return getDirectMediaUrl(fileId)
-}
-
-export function getVideoMediaUrl(fileId) {
   return getApiMediaUrl(fileId) ?? getDirectMediaUrl(fileId)
 }
 
+export function getVideoMediaUrl(fileId) {
+  return getMediaUrl(fileId)
+}
+
 export function getMediaFallbackUrl(fileId) {
-  return getApiMediaUrl(fileId)
+  return getApiMediaUrl(fileId) ? getDirectMediaUrl(fileId) : null
 }
 
 export function getDrivePreviewUrl(fileId) {

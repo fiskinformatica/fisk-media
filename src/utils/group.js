@@ -4,9 +4,18 @@ export function groupMediaByFolder(items) {
   for (const item of items) {
     const key = item.path.join(' / ')
     if (!groups.has(key)) {
+      const isVideo =
+        item.kind === 'video' || item.mimeType?.startsWith('video/')
+      const name =
+        item.path.length > 0
+          ? item.path[item.path.length - 1]
+          : isVideo
+            ? 'No Subtitles'
+            : 'Files'
+
       groups.set(key, {
         key,
-        name: item.path.length > 0 ? item.path[item.path.length - 1] : 'Files',
+        name,
         parent: item.path.length > 1 ? item.path.slice(0, -1).join(' / ') : '',
         items: [],
       })
