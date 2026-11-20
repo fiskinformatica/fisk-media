@@ -8,13 +8,13 @@ export default function ChangeNotice({ changes, onDismiss }) {
   const parts = []
 
   if (changes.added.length > 0) {
-    parts.push(plural(changes.added.length, 'novo', 'novos'))
+    parts.push(plural(changes.added.length, 'new', 'new'))
   }
   if (changes.removed.length > 0) {
-    parts.push(plural(changes.removed.length, 'removido', 'removidos'))
+    parts.push(plural(changes.removed.length, 'removed', 'removed'))
   }
   if (changes.renamed.length > 0) {
-    parts.push(plural(changes.renamed.length, 'renomeado', 'renomeados'))
+    parts.push(plural(changes.renamed.length, 'renamed', 'renamed'))
   }
 
   return (
@@ -24,15 +24,15 @@ export default function ChangeNotice({ changes, onDismiss }) {
         aria-hidden="true"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800">
-          Biblioteca atualizada
+        <p className="text-xs font-semibold text-stone-800">Library updated</p>
+        <p className="mt-0.5 min-w-0 break-words text-xs text-stone-500 sm:text-sm">
+          {parts.join(' · ')}
         </p>
-        <p className="mt-0.5 text-xs text-stone-500">{parts.join(' · ')}</p>
       </div>
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Fechar aviso"
+        aria-label="Dismiss"
         className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />

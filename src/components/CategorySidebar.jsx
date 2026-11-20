@@ -1,4 +1,4 @@
-import { Film, Headphones } from 'lucide-react'
+import { ChevronDown, Film, Headphones } from 'lucide-react'
 
 export default function CategorySidebar({
   categories,
@@ -10,39 +10,32 @@ export default function CategorySidebar({
 
   return (
     <>
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:hidden">
-        {categories.map((category) => {
-          const isActive = category.id === selectedId
-          return (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => onSelect(category.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition ${
-                isActive
-                  ? 'border-brand-600 bg-brand-600 text-white shadow-sm'
-                  : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
-              }`}
-            >
-              {category.name}
-              <span
-                className={`tabular-nums ${
-                  isActive ? 'text-white/70' : 'text-stone-400'
-                }`}
-              >
-                {category.items.length}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+      <label className="mb-4 block lg:hidden">
+        <span className="eyebrow mb-1.5 block">Book</span>
+        <span className="relative block">
+          <select
+            value={selectedId ?? ''}
+            onChange={(event) => onSelect(event.target.value)}
+            aria-label="Book"
+            className="field-control h-10 min-w-0 appearance-none px-3 pr-10 text-sm"
+          >
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name} ({category.items.length})
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+            aria-hidden="true"
+          />
+        </span>
+      </label>
 
-      <aside className="hidden w-56 shrink-0 lg:block">
+      <aside className="hidden w-60 shrink-0 lg:block xl:w-64">
         <div className="lg:sticky lg:top-24">
-          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
-            Categorias
-          </p>
-          <nav className="space-y-1" aria-label="Categorias">
+          <p className="eyebrow mb-2 px-3">Books</p>
+          <nav className="space-y-1" aria-label="Books">
             {categories.map((category) => {
               const isActive = category.id === selectedId
               return (
@@ -63,11 +56,11 @@ export default function CategorySidebar({
                     }`}
                     aria-hidden="true"
                   />
-                  <span className="flex-1 truncate font-medium">
+                  <span className="min-w-0 flex-1 leading-tight font-medium line-clamp-2 break-words">
                     {category.name}
                   </span>
                   <span
-                    className={`text-xs tabular-nums ${
+                    className={`shrink-0 text-xs tabular-nums ${
                       isActive ? 'text-white/65' : 'text-stone-400'
                     }`}
                   >

@@ -77,21 +77,21 @@ export default function FolderOrderPanel({ library }) {
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold tracking-tight text-stone-900">
-            Ordem das pastas
+            Folder order
           </h3>
           <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
-            Defina a sequência em que as pastas aparecem na biblioteca.
+            Set the order folders appear in the library.
           </p>
         </div>
       </div>
 
       {!library ? (
         <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-          Sincronize a biblioteca para carregar as pastas disponíveis.
+          Sync the library to load folders.
         </p>
       ) : categories.length === 0 ? (
         <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-          Nenhuma pasta disponível neste tipo de mídia.
+          No folders for this media type.
         </p>
       ) : (
         <>
@@ -108,8 +108,8 @@ export default function FolderOrderPanel({ library }) {
             <select
               value={activeCategory?.id ?? ''}
               onChange={(event) => setCategoryId(event.target.value)}
-              aria-label="Categoria"
-              className="field-control h-10 px-3 text-xs"
+              aria-label="Book"
+              className="field-control h-10 min-w-0 px-3 text-sm sm:w-56"
             >
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -121,7 +121,7 @@ export default function FolderOrderPanel({ library }) {
 
           {orderedGroups.length === 0 ? (
             <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-              Esta categoria não tem subpastas para organizar.
+              No subfolders to arrange.
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
@@ -135,13 +135,13 @@ export default function FolderOrderPanel({ library }) {
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-stone-800">
+                    <p className="text-sm leading-tight font-medium break-words text-stone-800 line-clamp-2">
                       {group.name}
                     </p>
-                    <p className="truncate text-[11px] text-stone-400">
+                    <p className="text-xs leading-snug break-words text-stone-400 line-clamp-2">
                       {group.parent ? `${group.parent} · ` : ''}
                       {group.items.length}{' '}
-                      {group.items.length === 1 ? 'arquivo' : 'arquivos'}
+                      {group.items.length === 1 ? 'file' : 'files'}
                     </p>
                   </div>
 
@@ -150,7 +150,7 @@ export default function FolderOrderPanel({ library }) {
                       type="button"
                       onClick={() => move(index, -1)}
                       disabled={index === 0}
-                      aria-label={`Mover ${group.name} para cima`}
+                      aria-label={`Move ${group.name} up`}
                       className="icon-button h-8 w-8 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -159,7 +159,7 @@ export default function FolderOrderPanel({ library }) {
                       type="button"
                       onClick={() => move(index, 1)}
                       disabled={index === orderedGroups.length - 1}
-                      aria-label={`Mover ${group.name} para baixo`}
+                      aria-label={`Move ${group.name} down`}
                       className="icon-button h-8 w-8 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -171,16 +171,16 @@ export default function FolderOrderPanel({ library }) {
           )}
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] leading-relaxed text-stone-400">
-              A ordem fica salva neste navegador.
+            <p className="text-xs leading-relaxed break-words text-stone-400">
+              Saved in this browser.
             </p>
             <button
               type="button"
               onClick={resetOrder}
-              className="btn-secondary"
+              className="btn-secondary min-h-9 py-2 text-xs sm:text-sm"
             >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              Restaurar padrão
+              <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              Reset
             </button>
           </div>
         </>

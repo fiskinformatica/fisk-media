@@ -1,16 +1,16 @@
-const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
-  hour: '2-digit',
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
   minute: '2-digit',
 })
 
-const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
-  day: '2-digit',
-  month: '2-digit',
-  hour: '2-digit',
+const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
   minute: '2-digit',
 })
 
-const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
   year: 'numeric',
 })
@@ -44,14 +44,14 @@ export function formatBytes(bytes) {
   }
 
   const rounded = size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)
-  return `${String(rounded).replace('.', ',')} ${units[unit]}`
+  return `${rounded} ${units[unit]}`
 }
 
 export function formatLastSync(timestamp) {
-  if (!timestamp) return 'Ainda não sincronizado'
+  if (!timestamp) return 'Not synced yet'
 
   const date = new Date(timestamp)
-  if (Number.isNaN(date.getTime())) return 'Ainda não sincronizado'
+  if (Number.isNaN(date.getTime())) return 'Not synced yet'
 
   const now = new Date()
   const sameDay =
@@ -60,8 +60,8 @@ export function formatLastSync(timestamp) {
     date.getFullYear() === now.getFullYear()
 
   return sameDay
-    ? `Atualizado às ${timeFormatter.format(date)}`
-    : `Atualizado em ${dateTimeFormatter.format(date)}`
+    ? `Updated ${timeFormatter.format(date)}`
+    : `Updated ${dateTimeFormatter.format(date)}`
 }
 
 export function formatMonthYear(date = new Date()) {
@@ -69,7 +69,7 @@ export function formatMonthYear(date = new Date()) {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-const naturalCollator = new Intl.Collator('pt-BR', {
+const naturalCollator = new Intl.Collator('en-US', {
   numeric: true,
   sensitivity: 'base',
 })

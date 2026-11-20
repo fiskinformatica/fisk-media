@@ -22,3 +22,22 @@ export function removeStorage(key) {
     /* ignore */
   }
 }
+
+export function migrateLegacyStorage() {
+  try {
+    const storage = window.localStorage
+
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const oldKey = storage.key(index)
+      if (!oldKey?.startsWith('fisk.')) continue
+
+      const newKey = `media.${oldKey.slice(5)}`
+      if (storage.getItem(newKey) === null) {
+        storage.setItem(newKey, storage.getItem(oldKey))
+      }
+      storage.removeItem(oldKey)
+    }
+  } catch {
+    /* ignore */
+  }
+}

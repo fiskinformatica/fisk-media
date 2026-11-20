@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   AlertCircle,
+  Download,
   Lock,
   LogOut,
   RefreshCw,
@@ -11,12 +12,15 @@ import FolderOrderPanel from './FolderOrderPanel.jsx'
 import SyncButton from './SyncButton.jsx'
 import { OWNER_PASSWORD, PIN_LENGTH } from '../config/access.js'
 import { useLibrary } from '../hooks/useLibrary.js'
+import { buildSnapshot, downloadSnapshot } from '../services/snapshotService.js'
+import { exportFolderOrders, resetLocalOrders } from '../utils/folderOrder.js'
 import { formatLastSync } from '../utils/format.js'
 
 export default function AdminPanel() {
   const [unlocked, setUnlocked] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState(null)
+  const [published, setPublished] = useState(false)
 
   const {
     library,
@@ -37,7 +41,7 @@ export default function AdminPanel() {
     event.preventDefault()
 
     if (pin !== OWNER_PASSWORD) {
-      setError('PIN incorreto.')
+      setError('Wrong PIN.')
       setPin('')
       return
     }
@@ -51,6 +55,17 @@ export default function AdminPanel() {
     setUnlocked(false)
     setPin('')
     setError(null)
+    setPublished(false)
+  }
+
+  function handlePublish() {
+    if (!library) return
+
+    downloadSnapshot(
+      buildSnapshot({ library, folderOrder: exportFolderOrders() }),
+    )
+    resetLocalOrders()
+    setPublished(true)
   }
 
   return (
@@ -66,12 +81,12 @@ export default function AdminPanel() {
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold tracking-tight text-stone-900">
-              Administração
+              Admin
             </h2>
             <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
               {unlocked
-                ? 'Sincronização e ordem das pastas da biblioteca.'
-                : 'Acesso restrito ao administrador.'}
+                ? 'Sync and folder order.'
+                : 'Restricted access.'}
             </p>
           </div>
         </div>
@@ -80,10 +95,10 @@ export default function AdminPanel() {
           <button
             type="button"
             onClick={handleLock}
-            className="btn-secondary shrink-0"
+            className="btn-secondary max-w-full shrink-0"
           >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Sair
+            <LogOut className="cursor-pointer h-4 w-4 shrink-0" aria-hidden="true" />
+            Sign out
           </button>
         )}
       </div>
@@ -91,7 +106,7 @@ export default function AdminPanel() {
       {!unlocked ? (
         <form onSubmit={handleUnlock} className="mt-4" noValidate>
           <label htmlFor="owner-pin" className="sr-only">
-            PIN do administrador
+            Admin PIN
           </label>
           <input
             id="owner-pin"
@@ -106,14 +121,14 @@ export default function AdminPanel() {
             placeholder="••••"
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'owner-pin-error' : undefined}
-            className="field-control h-14 text-center text-[26px] font-semibold tracking-[0.55em] placeholder:tracking-[0.4em] placeholder:text-stone-300"
+            className="field-control h-14 px-2 pl-[0.4em] text-center text-2xl font-semibold tracking-[0.4em] placeholder:tracking-[0.3em] placeholder:text-stone-300 sm:text-[26px]"
           />
 
           {error && (
             <p
               id="owner-pin-error"
               role="alert"
-              className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-red-600"
+              className="mt-3 flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
             >
               <AlertCircle
                 className="mt-px h-3.5 w-3.5 shrink-0"
@@ -128,23 +143,23 @@ export default function AdminPanel() {
             disabled={pin.length !== PIN_LENGTH}
             className="btn-primary mt-4 w-full"
           >
-            Desbloquear
+            Unlock
           </button>
 
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-stone-400">
-            Sincronização e ordem das pastas são exclusivas do administrador.
+          <p className="mt-3 text-center text-xs leading-relaxed text-stone-400">
+            Sync and folder order are for the admin only.
           </p>
         </form>
       ) : (
         <div className="mt-5 space-y-5">
           <div>
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-semibold tracking-tight text-stone-900">
-                  Sincronização
+                  Sync
                 </h3>
                 <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
-                  Atualize a biblioteca exibida aos alunos.
+                  Refresh the library shown to students.
                 </p>
               </div>
               <SyncButton
@@ -161,9 +176,33 @@ export default function AdminPanel() {
                 }`}
                 aria-hidden="true"
               />
-              <span>
-                {isSyncing ? 'Sincronizando...' : formatLastSync(syncedAt)}
+              <span className="min-w-0 break-words">
+                {isSyncing ? 'Syncing…' : formatLastSync(syncedAt)}
               </span>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-stone-700">
+                    Publish to students
+                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed break-words text-stone-400">
+                    {published
+                      ? 'Replace public/library.json with the downloaded file and deploy.'
+                      : 'Download the library and folder order as a static file.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={!library}
+                  className="btn-secondary min-h-9 max-w-full shrink-0 py-2 text-xs"
+                >
+                  <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Download snapshot
+                </button>
+              </div>
             </div>
 
             {!apiConfigured && (
@@ -173,16 +212,14 @@ export default function AdminPanel() {
                   aria-hidden="true"
                 />
                 <span>
-                  A chave da API não está configurada. Defina{' '}
-                  <code>VITE_GOOGLE_API_KEY</code> para sincronizar.
+                  API key missing. Set <code>VITE_GOOGLE_API_KEY</code> to sync.
                 </span>
               </div>
             )}
 
             {syncError && (
               <p className="mt-3 rounded-xl border border-red-200/70 bg-red-50 px-3.5 py-3 text-xs leading-relaxed text-red-700">
-                {syncError.message ||
-                  'Não foi possível sincronizar a biblioteca agora.'}
+                {syncError.message || "Couldn't sync the library right now."}
               </p>
             )}
           </div>

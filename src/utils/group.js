@@ -6,7 +6,7 @@ export function groupMediaByFolder(items) {
     if (!groups.has(key)) {
       groups.set(key, {
         key,
-        name: item.path.length > 0 ? item.path[item.path.length - 1] : 'Arquivos',
+        name: item.path.length > 0 ? item.path[item.path.length - 1] : 'Files',
         parent: item.path.length > 1 ? item.path.slice(0, -1).join(' / ') : '',
         items: [],
       })

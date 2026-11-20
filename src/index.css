@@ -27,27 +27,27 @@
   }
 
   .field-control {
-    @apply w-full rounded-xl border border-stone-200 bg-stone-50/60 text-sm text-stone-900 transition placeholder:text-stone-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10;
+    @apply w-full min-w-0 max-w-full rounded-xl border border-stone-200 bg-stone-50/60 text-sm text-stone-900 transition placeholder:text-stone-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10;
   }
 
   .btn-primary {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35;
+    @apply inline-flex h-auto min-h-11 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm leading-tight font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35;
   }
 
   .btn-secondary {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
+    @apply inline-flex h-auto min-h-9 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[13px] leading-tight font-medium text-stone-600 transition hover:border-stone-300 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
   }
 
   .icon-button {
-    @apply grid h-9 w-9 place-items-center rounded-xl border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-stone-200 bg-white text-stone-500 transition hover:border-stone-300 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
   }
 
   .link-muted {
-    @apply inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-stone-400 transition hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40;
+    @apply inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg px-2 py-1 text-xs leading-snug font-medium text-stone-400 transition hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400;
+    @apply text-xs font-semibold tracking-[0.1em] text-stone-400 uppercase;
   }
 }
 

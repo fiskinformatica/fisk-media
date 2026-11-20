@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getMediaFallbackUrl, getMediaUrl } from '../services/driveService.js'
 import { readJson, writeJson } from '../utils/storage.js'
 
-const PLAYER_STORAGE_KEY = 'fisk.player.v1'
+const PLAYER_STORAGE_KEY = 'media.player.v1'
 
 function readInitialVolume() {
   const stored = readJson(PLAYER_STORAGE_KEY)
@@ -93,7 +93,7 @@ export function useAudioPlayer() {
       }
 
       setError(
-        'Não foi possível reproduzir este áudio. Confira se o arquivo está compartilhado publicamente no Drive.',
+        "Can't play this audio. Make sure the file is publicly shared on Drive.",
       )
       playIntentRef.current = false
       setIsPlaying(false)

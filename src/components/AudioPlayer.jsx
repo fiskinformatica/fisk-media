@@ -39,11 +39,11 @@ export default function AudioPlayer({
     <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] sm:px-4 sm:pb-4">
       <div className="mx-auto w-full border-t border-stone-200/80 bg-white/95 shadow-[0_-10px_40px_-24px_rgba(28,25,23,0.35)] backdrop-blur-md sm:max-w-5xl sm:rounded-2xl sm:border sm:shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)]">
         <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-4 sm:px-5">
-          <div className="min-w-0 flex-1 sm:w-52 sm:flex-none">
-            <p className="truncate text-sm font-semibold text-stone-900">
+          <div className="min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-64">
+            <p className="text-sm leading-tight font-semibold text-stone-900 line-clamp-2 break-words">
               {currentTrack.name}
             </p>
-            <p className="truncate text-[11px] text-stone-400">{location}</p>
+            <p className="truncate text-xs text-stone-400">{location}</p>
           </div>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -51,7 +51,7 @@ export default function AudioPlayer({
               type="button"
               onClick={previous}
               disabled={!hasPrevious}
-              aria-label="Faixa anterior"
+              aria-label="Previous track"
               className="grid h-8 w-8 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <SkipBack className="h-4 w-4" fill="currentColor" />
@@ -60,7 +60,7 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggle}
-              aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
               className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
               {isPlaying ? (
@@ -74,15 +74,15 @@ export default function AudioPlayer({
               type="button"
               onClick={next}
               disabled={!hasNext}
-              aria-label="Próxima faixa"
+              aria-label="Next track"
               className="grid h-8 w-8 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <SkipForward className="h-4 w-4" fill="currentColor" />
             </button>
           </div>
 
-          <div className="hidden flex-1 items-center gap-2.5 sm:flex">
-            <span className="w-9 text-right text-[11px] tabular-nums text-stone-400">
+          <div className="hidden min-w-0 flex-1 items-center gap-2.5 sm:flex">
+            <span className="w-10 text-right text-xs tabular-nums text-stone-400 sm:w-12">
               {formatDuration(currentTime)}
             </span>
             <input
@@ -93,11 +93,11 @@ export default function AudioPlayer({
               value={Math.min(currentTime, duration || 0)}
               onChange={(event) => seek(Number(event.target.value))}
               disabled={!duration}
-              aria-label="Progresso do áudio"
-              className="player-range flex-1"
+              aria-label="Seek audio"
+              className="player-range min-w-0 flex-1"
               style={{ '--progress': `${percent}%` }}
             />
-            <span className="w-9 text-[11px] tabular-nums text-stone-400">
+            <span className="w-10 text-xs tabular-nums text-stone-400 sm:w-12">
               {formatDuration(duration)}
             </span>
           </div>
@@ -106,7 +106,7 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggleMute}
-              aria-label={muted ? 'Ativar som' : 'Silenciar'}
+              aria-label={muted ? 'Unmute' : 'Mute'}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800"
             >
               {muted || volume === 0 ? (
@@ -143,7 +143,7 @@ export default function AudioPlayer({
         </div>
 
         <div className="flex items-center gap-2 px-4 pb-3 sm:hidden">
-          <span className="text-[10px] tabular-nums text-stone-400">
+          <span className="shrink-0 text-xs tabular-nums text-stone-400">
             {formatDuration(currentTime)}
           </span>
           <input
@@ -154,17 +154,17 @@ export default function AudioPlayer({
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seek(Number(event.target.value))}
             disabled={!duration}
-            aria-label="Progresso do áudio"
-            className="player-range flex-1"
+            aria-label="Seek audio"
+            className="player-range min-w-0 flex-1"
             style={{ '--progress': `${percent}%` }}
           />
-          <span className="text-[10px] tabular-nums text-stone-400">
+          <span className="shrink-0 text-xs tabular-nums text-stone-400">
             {formatDuration(duration)}
           </span>
         </div>
 
         {error && (
-          <p className="px-4 pb-3 text-center text-[11px] leading-relaxed text-red-600 sm:px-5">
+          <p className="px-4 pb-3 text-center text-xs leading-relaxed break-words text-red-600 sm:px-5">
             {error}
           </p>
         )}

@@ -10,7 +10,7 @@ function VideoCard({ item, onSelect }) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false)
   const detail =
     [fileExtension(item.name), formatBytes(item.size)].filter(Boolean).join(' · ') ||
-    'Vídeo'
+    'Video'
 
   return (
     <button
@@ -45,10 +45,10 @@ function VideoCard({ item, onSelect }) {
       </div>
 
       <div className="px-2 py-2 sm:px-2.5 sm:py-2.5">
-        <p className="line-clamp-2 text-[11px] font-medium leading-snug text-stone-800 sm:text-xs">
+        <p className="text-xs leading-snug font-medium text-stone-800 line-clamp-2">
           {item.name}
         </p>
-        <p className="mt-0.5 truncate text-[10px] text-stone-400">{detail}</p>
+        <p className="mt-0.5 truncate text-[11px] text-stone-400">{detail}</p>
       </div>
     </button>
   )

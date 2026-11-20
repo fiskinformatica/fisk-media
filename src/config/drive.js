@@ -20,6 +20,7 @@ export const AUDIO_FOLDERS = [
   { name: 'Fluency 2', id: '161J8pT6z-T1htkCVybGelMpg3EM4kRxr' },
   { name: 'In Focus', id: '1cA7b4vCjhuE0xa2EtQwHFA3rq3UbB8jv' },
 ]
+
 export const VIDEO_FOLDERS = [
   { name: 'Essentials 1', id: '1Im0EZZghHm27P2TAOKX5eD0Vv5ZmEpm-' },
   { name: 'Essentials 2', id: '17Jnd7Mq5B1uDzJ408QU4MjzMYgIor-dz' },
@@ -28,9 +29,6 @@ export const VIDEO_FOLDERS = [
   { name: 'Fluency 1', id: '1qNiNdt_XhRPxRAv2f694Fy7uqKucIMOu' },
   { name: 'Fluency 2', id: '1j5l0S7_kGLwFyFC7JdNFmsi8P9PpnoE2' },
 ]
-
-export const LIBRARY_NAME = 'Fisk Media'
-export const LIBRARY_TAGLINE = 'Biblioteca de áudios e vídeos'
 
 /**
  * Drive API key, created in Google Cloud Console with the Drive API enabled.

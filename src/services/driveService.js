@@ -13,7 +13,7 @@ const REQUEST_CONCURRENCY = 6
 const AUDIO_EXTENSION = /\.(mp3|m4a|aac|wav|oga|ogg|opus|flac|aiff|aif)$/i
 const VIDEO_EXTENSION = /\.(mp4|m4v|mov|webm|ogv|mkv|avi)$/i
 
-const collator = new Intl.Collator('pt-BR', {
+const collator = new Intl.Collator('en-US', {
   numeric: true,
   sensitivity: 'base',
 })
@@ -85,7 +85,7 @@ async function fetchFilesPage(folderId, pageToken, signal) {
   if (!response.ok) {
     const detail = await readError(response)
     const error = new Error(
-      detail || `O Google Drive respondeu com o status ${response.status}.`,
+      detail || `Google Drive returned status ${response.status}.`,
     )
     error.status = response.status
     throw error
@@ -139,12 +139,12 @@ function getMediaKind(file) {
 
 function describeError(error, categoryName) {
   if (error.status === 403) {
-    return `Sem permissão para ler "${categoryName}". Compartilhe a pasta e o conteúdo com "Qualquer pessoa com o link" e confira as restrições da chave da API.`
+    return `No access to "${categoryName}". Share the folder and its contents with "Anyone with the link" and check the API key restrictions.`
   }
   if (error.status === 404) {
-    return `A pasta "${categoryName}" não foi encontrada. Confira o ID em src/config/drive.js.`
+    return `Folder "${categoryName}" not found. Check the ID in src/config/drive.js.`
   }
-  return error.message || 'Não foi possível consultar o Google Drive.'
+  return error.message || "Couldn't reach Google Drive."
 }
 
 function compareMedia(a, b) {
@@ -220,7 +220,7 @@ async function collectCategory(root, kind, { limit, signal, errors, onScan }) {
 export async function fetchLibrary({ signal, onProgress } = {}) {
   if (!DRIVE_API_KEY) {
     throw new DriveConfigurationError(
-      'A chave da API do Google Drive não está configurada. Defina VITE_GOOGLE_API_KEY e gere o site novamente.',
+      'Google Drive API key missing. Set VITE_GOOGLE_API_KEY and rebuild.',
     )
   }
 

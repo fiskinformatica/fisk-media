@@ -1,6 +1,24 @@
-import { readJson, writeJson } from './storage.js'
+import { readJson, removeStorage, writeJson } from './storage.js'
 
-const STORAGE_KEY = 'fisk.folderOrder.v1'
+const STORAGE_KEY = 'media.folderOrder.v2'
+
+let sharedOrders = {}
+
+export function setSharedOrders(orders) {
+  sharedOrders = orders && typeof orders === 'object' ? { ...orders } : {}
+}
+
+export function getSharedOrders() {
+  return { ...sharedOrders }
+}
+
+export function exportFolderOrders() {
+  return { ...sharedOrders, ...readStore().orders }
+}
+
+export function resetLocalOrders() {
+  removeStorage(STORAGE_KEY)
+}
 
 function readStore() {
   const stored = readJson(STORAGE_KEY)
@@ -24,23 +42,30 @@ function orderId(kind, categoryId) {
 export function readFolderOrder(kind, categoryId) {
   if (!categoryId) return []
 
-  const order = readStore().orders[orderId(kind, categoryId)]
-  return Array.isArray(order) ? order : []
+  const key = orderId(kind, categoryId)
+  const order = readStore().orders[key]
+  if (Array.isArray(order)) return order
+
+  return Array.isArray(sharedOrders[key]) ? sharedOrders[key] : []
 }
 
 export function saveFolderOrder(kind, categoryId, keys) {
   if (!categoryId) return
 
+  const key = orderId(kind, categoryId)
   const store = readStore()
-  store.orders[orderId(kind, categoryId)] = keys
+  store.orders[key] = keys
+  sharedOrders[key] = keys
   writeJson(STORAGE_KEY, store)
 }
 
 export function clearFolderOrder(kind, categoryId) {
   if (!categoryId) return
 
+  const key = orderId(kind, categoryId)
   const store = readStore()
-  delete store.orders[orderId(kind, categoryId)]
+  delete store.orders[key]
+  delete sharedOrders[key]
   writeJson(STORAGE_KEY, store)
 }
 

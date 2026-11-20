@@ -5,9 +5,11 @@ import {
   fetchLibrary,
   isDriveConfigured,
 } from '../services/driveService.js'
+import { fetchSnapshot } from '../services/snapshotService.js'
+import { setSharedOrders } from '../utils/folderOrder.js'
 import { readJson, writeJson } from '../utils/storage.js'
 
-const CACHE_KEY = 'fisk.library.v1'
+const CACHE_KEY = 'media.library.v1'
 
 function readCache() {
   const cache = readJson(CACHE_KEY)
@@ -20,15 +22,18 @@ function readCache() {
 
 export function useLibrary({ autoSync = true } = {}) {
   const [cache] = useState(readCache)
+  const [snapshot, setSnapshot] = useState(null)
+  const [hydrated, setHydrated] = useState(false)
   const [library, setLibrary] = useState(cache?.library ?? null)
   const [syncedAt, setSyncedAt] = useState(cache?.syncedAt ?? null)
-  const [status, setStatus] = useState(cache?.library ? 'ready' : 'idle')
+  const [status, setStatus] = useState(cache?.library ? 'ready' : 'loading')
   const [error, setError] = useState(null)
   const [changes, setChanges] = useState(null)
   const [progress, setProgress] = useState({ folders: 0, files: 0 })
 
   const libraryRef = useRef(library)
   const syncedAtRef = useRef(syncedAt)
+  const snapshotRef = useRef(null)
   const inFlightRef = useRef(false)
   const controllerRef = useRef(null)
   const mountedRef = useRef(true)
@@ -39,6 +44,43 @@ export function useLibrary({ autoSync = true } = {}) {
       mountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    const controller = new AbortController()
+
+    fetchSnapshot({ signal: controller.signal }).then((next) => {
+      if (!active || controller.signal.aborted) return
+
+      snapshotRef.current = next
+      setSnapshot(next)
+      if (next?.folderOrder) setSharedOrders(next.folderOrder)
+
+      const cacheTime = cache?.syncedAt ?? 0
+      const publishedTime = Date.parse(next?.publishedAt ?? '') || 0
+      const preferSnapshot =
+        Boolean(next?.library) && (!cache?.library || publishedTime >= cacheTime)
+
+      if (preferSnapshot) {
+        const timestamp = publishedTime || Date.now()
+        libraryRef.current = next.library
+        syncedAtRef.current = timestamp
+        setLibrary(next.library)
+        setSyncedAt(timestamp)
+        setStatus('ready')
+        writeJson(CACHE_KEY, { v: 1, syncedAt: timestamp, library: next.library })
+      } else if (!cache?.library) {
+        setStatus('idle')
+      }
+
+      setHydrated(true)
+    })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [cache])
 
   const sync = useCallback(async () => {
     if (inFlightRef.current) return
@@ -85,7 +127,7 @@ export function useLibrary({ autoSync = true } = {}) {
   }, [])
 
   useEffect(() => {
-    if (!autoSync) return undefined
+    if (!autoSync || !hydrated || snapshotRef.current?.library) return undefined
 
     const isStale = Date.now() - (syncedAtRef.current ?? 0) > SYNC_INTERVAL_MS
 
@@ -100,7 +142,7 @@ export function useLibrary({ autoSync = true } = {}) {
       window.clearInterval(intervalId)
       controllerRef.current?.abort()
     }
-  }, [autoSync, sync])
+  }, [autoSync, hydrated, sync])
 
   const dismissChanges = useCallback(() => setChanges(null), [])
 
@@ -113,6 +155,7 @@ export function useLibrary({ autoSync = true } = {}) {
     progress,
     hasData: Boolean(library),
     isSyncing: status === 'loading' || status === 'refreshing',
+    hasPublishedSnapshot: Boolean(snapshot?.library),
     apiConfigured: isDriveConfigured(),
     refresh: sync,
     dismissChanges,

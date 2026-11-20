@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Clock, KeyRound, Loader2, LogOut } from 'lucide-react'
+import { Clock, Loader2, LogOut } from 'lucide-react'
 import AudioList from './AudioList.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
-import Brand from './Brand.jsx'
 import CategorySidebar from './CategorySidebar.jsx'
 import ChangeNotice from './ChangeNotice.jsx'
 import {
@@ -87,32 +86,20 @@ export default function LibraryBrowser({ onLock }) {
   }
 
   const stats = library?.stats
-  const statusText = isSyncing ? 'Sincronizando...' : formatLastSync(syncedAt)
+  const statusText = isSyncing ? 'Syncing…' : formatLastSync(syncedAt)
 
   return (
     <div className="min-h-svh pb-32">
       <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#fbfbfb]/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Brand />
-          <nav className="flex items-center gap-2" aria-label="Navegação">
-            <a
-              href="#/teachers"
-              title="Área do professor"
-              aria-label="Área do professor"
-              className="btn-secondary"
-            >
-              <KeyRound className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Área do professor</span>
-            </a>
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-end px-4 sm:px-6">
+          <nav aria-label="Account">
             <button
               type="button"
               onClick={onLock}
-              title="Sair da biblioteca"
-              aria-label="Sair da biblioteca"
-              className="btn-secondary"
+              className="btn-secondary min-h-10 px-2 py-2 sm:px-3"
             >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Sair</span>
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="cursor-pointer text-xs">Sign out</span>
             </button>
           </nav>
         </div>
@@ -122,17 +109,23 @@ export default function LibraryBrowser({ onLock }) {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-[28px]">
-              Biblioteca
+              Library
             </h1>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
+            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs leading-snug break-words text-stone-400">
               {isSyncing ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  <Loader2
+                    className="h-3.5 w-3.5 shrink-0 animate-spin"
+                    aria-hidden="true"
+                  />
                   {statusText}
                 </>
               ) : (
                 <>
-                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Clock
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
                   {statusText}
                 </>
               )}
@@ -152,14 +145,14 @@ export default function LibraryBrowser({ onLock }) {
 
         {!apiConfigured && hasData && (
           <InlineWarning>
-            A chave da API não está configurada. A biblioteca salva está sendo
-            exibida, mas a sincronização e a reprodução podem falhar.
+            API key missing. Showing the saved library; sync and playback may
+            fail.
           </InlineWarning>
         )}
 
         {error && hasData && (
           <InlineWarning onRetry={refresh}>
-            Não foi possível atualizar agora. Exibindo a última versão salva.
+            Couldn't update. Showing the saved version.
           </InlineWarning>
         )}
 
@@ -186,8 +179,7 @@ export default function LibraryBrowser({ onLock }) {
                       {selectedCategory.name}
                     </h2>
                     <p className="mt-0.5 text-xs text-stone-400">
-                      {items.length}{' '}
-                      {items.length === 1 ? 'arquivo' : 'arquivos'}
+                      {items.length} {items.length === 1 ? 'file' : 'files'}
                     </p>
                   </div>
 
@@ -195,9 +187,11 @@ export default function LibraryBrowser({ onLock }) {
 
                   {items.length === 0 ? (
                     <EmptyState
-                      description={`A categoria ${selectedCategory.name} não tem ${
-                        tab === 'audio' ? 'áudios' : 'vídeos'
-                      } no momento.`}
+                      description={
+                        tab === 'audio'
+                          ? 'No audio files here yet.'
+                          : 'No videos here yet.'
+                      }
                     />
                   ) : tab === 'audio' ? (
                     <AudioList
@@ -217,24 +211,14 @@ export default function LibraryBrowser({ onLock }) {
                 </>
               ) : (
                 <EmptyState
-                  title="Nenhuma categoria"
-                  description="Adicione uma pasta em src/config/drive.js para começar."
+                  title="No books"
+                  description="Add a folder in src/config/drive.js to get started."
                 />
               )}
             </section>
           </div>
         )}
       </main>
-
-      <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
-        <div className="flex flex-col items-center justify-between gap-2 border-t border-stone-200/70 pt-5 text-[11px] text-stone-400 sm:flex-row">
-          <span>Fisk Media · Biblioteca de áudios e vídeos</span>
-          <a href="#/teachers" className="link-muted">
-            <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
-            Área do professor
-          </a>
-        </div>
-      </footer>
 
       {player.currentTrack && <AudioPlayer {...player} />}
 

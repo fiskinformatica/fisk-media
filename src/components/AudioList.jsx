@@ -53,7 +53,7 @@ export default function AudioList({
               const detail =
                 [fileExtension(item.name), formatBytes(item.size)]
                   .filter(Boolean)
-                  .join(' · ') || 'Áudio'
+                  .join(' · ') || 'Audio'
 
               return (
                 <button
@@ -98,8 +98,8 @@ export default function AudioList({
                   </span>
 
                   {isActive && (
-                    <span className="hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-brand-600 sm:flex">
-                      {isPlaying ? 'Tocando' : 'Pausado'}
+                    <span className="hidden shrink-0 items-center gap-1.5 text-xs font-medium text-brand-600 sm:flex">
+                      {isPlaying ? 'Playing' : 'Paused'}
                     </span>
                   )}
                 </button>

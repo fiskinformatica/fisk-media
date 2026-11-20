@@ -10,9 +10,9 @@
  * this file. The fallbacks are only here to keep local development working.
  */
 export const SECRET_SALT =
-  (import.meta.env.VITE_SECRET_SALT ?? '').trim() || 'ALTERE-ESTE-SEGREDO'
+  (import.meta.env.VITE_SECRET_SALT ?? '').trim() || 'CHANGE-THIS-SECRET'
 
-/** 4-digit PIN for the teacher area. */
+/** 4-digit PIN for the teacher's area. */
 export const STAFF_PASSWORD =
   (import.meta.env.VITE_STAFF_PASSWORD ?? '').trim() || '0000'
 
@@ -27,4 +27,4 @@ export const OWNER_PASSWORD =
 export const ACCEPT_PREVIOUS_MONTH = true
 
 export const PIN_LENGTH = 4
-export const ACCESS_STORAGE_KEY = 'fisk.access.v1'
+export const ACCESS_STORAGE_KEY = 'media.access.v1'

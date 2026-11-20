@@ -41,27 +41,34 @@ export default function VideoModal({ item, onClose }) {
         className="flex max-h-svh w-full max-w-4xl animate-fade-in flex-col overflow-hidden bg-stone-950 sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
+        <div className="flex items-start gap-3 px-4 py-3 sm:items-center sm:px-5">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">{item.name}</p>
-            <p className="truncate text-[11px] text-white/45">{location}</p>
+            <p className="text-sm leading-tight font-medium break-words text-white line-clamp-2">
+              {item.name}
+            </p>
+            <p className="text-xs leading-snug break-words text-white/45 line-clamp-2">
+              {location}
+            </p>
           </div>
 
           <a
             href={getDriveViewUrl(item.id)}
             target="_blank"
             rel="noreferrer"
-            className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white sm:flex"
+            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10 hover:text-white sm:flex"
           >
-            Abrir no Drive
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            Open in Drive
+            <ExternalLink
+              className="h-3.5 w-3.5 shrink-0"
+              aria-hidden="true"
+            />
           </a>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar vídeo"
-            className="grid h-8 w-8 place-items-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white"
+            aria-label="Close video"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -89,18 +96,21 @@ export default function VideoModal({ item, onClose }) {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 sm:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:hidden">
           <a
             href={getDriveViewUrl(item.id)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/60"
+            className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-white/60"
           >
-            Abrir no Drive
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            Open in Drive
+            <ExternalLink
+              className="h-3.5 w-3.5 shrink-0"
+              aria-hidden="true"
+            />
           </a>
-          <span className="text-[10px] text-white/35">
-            Use os controles do player
+          <span className="text-xs text-white/45">
+            Use the player controls
           </span>
         </div>
       </div>

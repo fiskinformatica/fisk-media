@@ -23,13 +23,13 @@ export default function FolderSection({ name, parent, count, children }) {
             {name}
           </span>
           {parent && (
-            <span className="block truncate text-[10px] text-stone-400">
+              <span className="block truncate text-xs text-stone-400">
               {parent}
             </span>
           )}
         </span>
 
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70">
+        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70">
           {count}
         </span>
 
