@@ -3,10 +3,12 @@ import { ExternalLink, X } from 'lucide-react'
 import {
   getDrivePreviewUrl,
   getDriveViewUrl,
-  getMediaUrl,
+  getThumbnailUrl,
+  getVideoMediaUrl,
 } from '../services/driveService.js'
 
 export default function VideoModal({ item, onClose }) {
+  const [source] = useState(() => getVideoMediaUrl(item.id))
   const [useDrivePreview, setUseDrivePreview] = useState(false)
 
   useEffect(() => {
@@ -24,6 +26,10 @@ export default function VideoModal({ item, onClose }) {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [onClose])
+
+  function handleMediaError() {
+    setUseDrivePreview(true)
+  }
 
   const location = item.path.length
     ? `${item.categoryName} · ${item.path.join(' / ')}`
@@ -85,12 +91,14 @@ export default function VideoModal({ item, onClose }) {
             />
           ) : (
             <video
-              key={item.id}
-              src={getMediaUrl(item.id)}
+              key={source}
+              src={source}
+              poster={getThumbnailUrl(item.id, 480)}
+              preload="auto"
               controls
               autoPlay
               playsInline
-              onError={() => setUseDrivePreview(true)}
+              onError={handleMediaError}
               className="mx-auto max-h-[72svh] w-full bg-black object-contain"
             />
           )}
@@ -109,9 +117,7 @@ export default function VideoModal({ item, onClose }) {
               aria-hidden="true"
             />
           </a>
-          <span className="text-xs text-white/45">
-            Use the player controls
-          </span>
+          <span className="text-xs text-white/45">Use the player controls</span>
         </div>
       </div>
     </div>

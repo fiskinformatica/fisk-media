@@ -22,8 +22,12 @@ function VideoCard({ item, onSelect }) {
         {!thumbnailFailed ? (
           <img
             src={getThumbnailUrl(item.id, 480)}
+            srcSet={`${getThumbnailUrl(item.id, 320)} 320w, ${getThumbnailUrl(item.id, 480)} 480w`}
+            sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 240px"
             alt=""
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
             onError={() => setThumbnailFailed(true)}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           />

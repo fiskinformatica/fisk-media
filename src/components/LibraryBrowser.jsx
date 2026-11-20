@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Clock, Loader2, LogOut } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { LogOut } from 'lucide-react'
 import AudioList from './AudioList.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import CategorySidebar from './CategorySidebar.jsx'
-import ChangeNotice from './ChangeNotice.jsx'
 import {
   CategoryError,
   EmptyState,
   ErrorState,
-  InlineWarning,
   LoadingState,
   SetupState,
 } from './LibraryStates.jsx'
@@ -17,21 +15,9 @@ import VideoGrid from './VideoGrid.jsx'
 import VideoModal from './VideoModal.jsx'
 import { useAudioPlayer } from '../hooks/useAudioPlayer.js'
 import { useLibrary } from '../hooks/useLibrary.js'
-import { formatLastSync } from '../utils/format.js'
 
 export default function LibraryBrowser({ onLock }) {
-  const {
-    library,
-    syncedAt,
-    error,
-    changes,
-    progress,
-    hasData,
-    isSyncing,
-    apiConfigured,
-    refresh,
-    dismissChanges,
-  } = useLibrary()
+  const { library, error, hasData, apiConfigured, refresh } = useLibrary()
   const player = useAudioPlayer()
 
   const [tab, setTab] = useState('audio')
@@ -42,13 +28,6 @@ export default function LibraryBrowser({ onLock }) {
     if (!library) return []
     return (tab === 'audio' ? library.audio : library.video) ?? []
   }, [library, tab])
-
-  useEffect(() => {
-    if (!changes) return undefined
-
-    const timeoutId = window.setTimeout(dismissChanges, 12_000)
-    return () => window.clearTimeout(timeoutId)
-  }, [changes, dismissChanges])
 
   const selectedCategory =
     categories.find((category) => category.id === selectedId) ??
@@ -86,7 +65,6 @@ export default function LibraryBrowser({ onLock }) {
   }
 
   const stats = library?.stats
-  const statusText = isSyncing ? 'Syncing…' : formatLastSync(syncedAt)
 
   return (
     <div className="min-h-svh pb-32">
@@ -107,30 +85,9 @@ export default function LibraryBrowser({ onLock }) {
 
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-7 sm:px-6 sm:pt-9">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-[28px]">
-              Library
-            </h1>
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs leading-snug break-words text-stone-400">
-              {isSyncing ? (
-                <>
-                  <Loader2
-                    className="h-3.5 w-3.5 shrink-0 animate-spin"
-                    aria-hidden="true"
-                  />
-                  {statusText}
-                </>
-              ) : (
-                <>
-                  <Clock
-                    className="h-3.5 w-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  {statusText}
-                </>
-              )}
-            </p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-[28px]">
+            Library
+          </h1>
 
           <MediaTabs
             active={tab}
@@ -139,29 +96,12 @@ export default function LibraryBrowser({ onLock }) {
           />
         </div>
 
-        {changes && (
-          <ChangeNotice changes={changes} onDismiss={dismissChanges} />
-        )}
-
-        {!apiConfigured && hasData && (
-          <InlineWarning>
-            API key missing. Showing the saved library; sync and playback may
-            fail.
-          </InlineWarning>
-        )}
-
-        {error && hasData && (
-          <InlineWarning onRetry={refresh}>
-            Couldn't update. Showing the saved version.
-          </InlineWarning>
-        )}
-
         {!apiConfigured && !hasData ? (
           <SetupState />
         ) : !hasData && !error ? (
-          <LoadingState progress={progress} />
+          <LoadingState />
         ) : !hasData && error ? (
-          <ErrorState error={error} onRetry={refresh} />
+          <ErrorState onRetry={refresh} />
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
             <CategorySidebar
@@ -222,7 +162,9 @@ export default function LibraryBrowser({ onLock }) {
 
       {player.currentTrack && <AudioPlayer {...player} />}
 
-      {video && <VideoModal item={video} onClose={closeVideo} />}
+      {video && (
+        <VideoModal key={video.id} item={video} onClose={closeVideo} />
+      )}
     </div>
   )
 }

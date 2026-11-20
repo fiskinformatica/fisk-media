@@ -1,4 +1,5 @@
 import {
+  Loader2,
   Pause,
   Play,
   SkipBack,
@@ -16,6 +17,7 @@ function progressPercent(current, total) {
 export default function AudioPlayer({
   currentTrack,
   isPlaying,
+  isBuffering,
   currentTime,
   duration,
   volume,
@@ -60,10 +62,12 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggle}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
+              aria-label={isBuffering ? 'Buffering' : isPlaying ? 'Pause' : 'Play'}
               className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
-              {isPlaying ? (
+              {isBuffering ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isPlaying ? (
                 <Pause className="h-4 w-4" fill="currentColor" />
               ) : (
                 <Play className="ml-0.5 h-4 w-4" fill="currentColor" />

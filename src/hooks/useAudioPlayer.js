@@ -10,10 +10,18 @@ function readInitialVolume() {
   return Math.min(1, Math.max(0, value))
 }
 
+function shouldPrefetch() {
+  const connection = navigator.connection
+  if (!connection) return true
+  if (connection.saveData) return false
+  return !['slow-2g', '2g'].includes(connection.effectiveType)
+}
+
 export function useAudioPlayer() {
   const [volume, setVolumeState] = useState(readInitialVolume)
 
   const audioRef = useRef(null)
+  const prefetchRef = useRef(null)
   const queueRef = useRef([])
   const indexRef = useRef(-1)
   const fallbackRef = useRef(false)
@@ -23,35 +31,58 @@ export function useAudioPlayer() {
   const [queue, setQueue] = useState([])
   const [index, setIndex] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [muted, setMuted] = useState(false)
   const [error, setError] = useState(null)
 
-  const loadAt = useCallback((targetIndex, autoplay = true) => {
-    const track = queueRef.current[targetIndex]
-    if (!track) return
+  const preloadNext = useCallback((targetIndex) => {
+    if (!shouldPrefetch()) return
 
-    const audio = audioRef.current
+    const nextTrack = queueRef.current[targetIndex + 1]
+    if (!nextTrack) return
 
-    indexRef.current = targetIndex
-    setIndex(targetIndex)
-    setCurrentTime(0)
-    setDuration(0)
-    setError(null)
-    fallbackRef.current = false
-    playIntentRef.current = autoplay
-
-    if (!audio) return
-
-    audio.src = getMediaUrl(track.id)
-    audio.load()
-
-    if (autoplay) {
-      const promise = audio.play()
-      if (promise?.catch) promise.catch(() => setIsPlaying(false))
+    if (!prefetchRef.current) {
+      const prefetch = new Audio()
+      prefetch.preload = 'auto'
+      prefetchRef.current = prefetch
     }
+
+    const url = getMediaUrl(nextTrack.id)
+    if (prefetchRef.current.src !== url) prefetchRef.current.src = url
   }, [])
+
+  const loadAt = useCallback(
+    (targetIndex, autoplay = true) => {
+      const track = queueRef.current[targetIndex]
+      if (!track) return
+
+      const audio = audioRef.current
+
+      indexRef.current = targetIndex
+      setIndex(targetIndex)
+      setCurrentTime(0)
+      setDuration(0)
+      setError(null)
+      setIsBuffering(autoplay)
+      fallbackRef.current = false
+      playIntentRef.current = autoplay
+
+      if (!audio) return
+
+      audio.preload = 'auto'
+      audio.src = getMediaUrl(track.id)
+
+      if (autoplay) {
+        const promise = audio.play()
+        if (promise?.catch) promise.catch(() => setIsPlaying(false))
+      }
+
+      preloadNext(targetIndex)
+    },
+    [preloadNext],
+  )
 
   useEffect(() => {
     const audio = new Audio()
@@ -62,8 +93,16 @@ export function useAudioPlayer() {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime || 0)
     const handleDuration = () =>
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
-    const handlePlay = () => setIsPlaying(true)
-    const handlePause = () => setIsPlaying(false)
+    const handlePlay = () => {
+      setIsPlaying(true)
+      setIsBuffering(false)
+    }
+    const handlePause = () => {
+      setIsPlaying(false)
+      setIsBuffering(false)
+    }
+    const handleWaiting = () => setIsBuffering(true)
+    const handleCanPlay = () => setIsBuffering(false)
     const handleVolume = () => {
       volumeRef.current = audio.volume
       setVolumeState(audio.volume)
@@ -77,21 +116,24 @@ export function useAudioPlayer() {
       } else {
         playIntentRef.current = false
         setIsPlaying(false)
+        setIsBuffering(false)
       }
     }
     const handleError = () => {
       const track = queueRef.current[indexRef.current]
       if (!track) return
 
-      if (!fallbackRef.current) {
+      const fallbackUrl = getMediaFallbackUrl(track.id)
+      if (!fallbackRef.current && fallbackUrl && fallbackUrl !== audio.src) {
         fallbackRef.current = true
         const shouldPlay = playIntentRef.current
-        audio.src = getMediaFallbackUrl(track.id)
-        audio.load()
+        audio.preload = 'auto'
+        audio.src = fallbackUrl
         if (shouldPlay) audio.play().catch(() => setIsPlaying(false))
         return
       }
 
+      setIsBuffering(false)
       setError(
         "Can't play this audio. Make sure the file is publicly shared on Drive.",
       )
@@ -104,6 +146,8 @@ export function useAudioPlayer() {
     audio.addEventListener('durationchange', handleDuration)
     audio.addEventListener('play', handlePlay)
     audio.addEventListener('pause', handlePause)
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('canplay', handleCanPlay)
     audio.addEventListener('volumechange', handleVolume)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
@@ -115,11 +159,19 @@ export function useAudioPlayer() {
       audio.removeEventListener('durationchange', handleDuration)
       audio.removeEventListener('play', handlePlay)
       audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('canplay', handleCanPlay)
       audio.removeEventListener('volumechange', handleVolume)
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
       audio.src = ''
       audioRef.current = null
+
+      if (prefetchRef.current) {
+        prefetchRef.current.pause()
+        prefetchRef.current.src = ''
+        prefetchRef.current = null
+      }
     }
   }, [loadAt])
 
@@ -219,6 +271,7 @@ export function useAudioPlayer() {
   return {
     currentTrack,
     isPlaying,
+    isBuffering,
     currentTime,
     duration,
     volume,

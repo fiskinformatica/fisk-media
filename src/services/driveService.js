@@ -337,8 +337,14 @@ export function diffLibraries(previous, next) {
   }
 }
 
-export function getMediaUrl(fileId) {
-  if (!DRIVE_API_KEY) return getMediaFallbackUrl(fileId)
+export function getDirectMediaUrl(fileId) {
+  return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(
+    fileId,
+  )}&export=download&confirm=t`
+}
+
+export function getApiMediaUrl(fileId) {
+  if (!DRIVE_API_KEY) return null
 
   const params = new URLSearchParams({
     alt: 'media',
@@ -348,10 +354,16 @@ export function getMediaUrl(fileId) {
   return `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}?${params.toString()}`
 }
 
+export function getMediaUrl(fileId) {
+  return getDirectMediaUrl(fileId)
+}
+
+export function getVideoMediaUrl(fileId) {
+  return getApiMediaUrl(fileId) ?? getDirectMediaUrl(fileId)
+}
+
 export function getMediaFallbackUrl(fileId) {
-  return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(
-    fileId,
-  )}&export=download&confirm=t`
+  return getApiMediaUrl(fileId)
 }
 
 export function getDrivePreviewUrl(fileId) {

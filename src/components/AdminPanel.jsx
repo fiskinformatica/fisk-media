@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AlertCircle,
   Download,
@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react'
+import ChangeNotice from './ChangeNotice.jsx'
 import FolderOrderPanel from './FolderOrderPanel.jsx'
 import SyncButton from './SyncButton.jsx'
 import { OWNER_PASSWORD, PIN_LENGTH } from '../config/access.js'
@@ -27,9 +28,18 @@ export default function AdminPanel() {
     isSyncing,
     syncedAt,
     error: syncError,
+    changes,
     apiConfigured,
     refresh,
+    dismissChanges,
   } = useLibrary({ autoSync: unlocked })
+
+  useEffect(() => {
+    if (!changes) return undefined
+
+    const timeoutId = window.setTimeout(dismissChanges, 12_000)
+    return () => window.clearTimeout(timeoutId)
+  }, [changes, dismissChanges])
 
   function handleChange(event) {
     const nextPin = event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
@@ -152,6 +162,10 @@ export default function AdminPanel() {
         </form>
       ) : (
         <div className="mt-5 space-y-5">
+          {changes && (
+            <ChangeNotice changes={changes} onDismiss={dismissChanges} />
+          )}
+
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
