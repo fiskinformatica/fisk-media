@@ -77,7 +77,15 @@ export function EmptyState({
 
 export function CategoryError({ errors }) {
   const messages = [
-    ...new Set(errors.map((error) => error.message).filter(Boolean)),
+    ...new Set(
+      errors
+        .filter((error) => error?.message)
+        .map((error) =>
+          error.path && error.path !== error.category
+            ? `${error.path}: ${error.message}`
+            : error.message,
+        ),
+    ),
   ]
 
   if (messages.length === 0) return null

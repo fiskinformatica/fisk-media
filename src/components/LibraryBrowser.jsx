@@ -144,10 +144,16 @@ export default function LibraryBrowser({ onLock }) {
 
             <section className="min-w-0 flex-1">
               {selectedCategory ? (
-                <>
+                <div
+                  key={`${tab}-${selectedCategory.id}-${selectedCourse ?? ''}`}
+                  className="animate-fade-in"
+                >
                   <div className="mb-4 px-1">
+                    {selectedCourse && (
+                      <p className="eyebrow mb-1">{selectedCategory.name}</p>
+                    )}
                     <h2 className="text-lg font-semibold tracking-tight text-stone-900">
-                      {selectedCategory.name}
+                      {selectedCourse ?? selectedCategory.name}
                     </h2>
                     <p className="mt-0.5 text-xs text-stone-400">
                       {courseItems.length}{' '}
@@ -182,7 +188,7 @@ export default function LibraryBrowser({ onLock }) {
                       onSelect={handleOpenVideo}
                     />
                   )}
-                </>
+                </div>
               ) : (
                 <EmptyState
                   title="No series"

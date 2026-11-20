@@ -27,12 +27,31 @@ export function useAccess() {
     }
 
     const intervalId = window.setInterval(revalidate, 60_000)
+    let midnightId
+
+    const scheduleMidnight = () => {
+      const now = new Date()
+      const midnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      )
+      midnightId = window.setTimeout(
+        () => {
+          revalidate()
+          scheduleMidnight()
+        },
+        midnight.getTime() - now.getTime() + 50,
+      )
+    }
+    scheduleMidnight()
 
     document.addEventListener('visibilitychange', revalidate)
     window.addEventListener('focus', revalidate)
 
     return () => {
       window.clearInterval(intervalId)
+      window.clearTimeout(midnightId)
       document.removeEventListener('visibilitychange', revalidate)
       window.removeEventListener('focus', revalidate)
     }

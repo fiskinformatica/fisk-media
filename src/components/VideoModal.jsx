@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, X } from 'lucide-react'
 import {
+  getDirectMediaUrl,
   getDrivePreviewUrl,
   getDriveViewUrl,
   getThumbnailUrl,
@@ -8,8 +9,17 @@ import {
 } from '../services/driveService.js'
 
 export default function VideoModal({ item, onClose }) {
-  const [source] = useState(() => getVideoMediaUrl(item.id))
-  const [useDrivePreview, setUseDrivePreview] = useState(false)
+  const sources = useMemo(
+    () =>
+      item.id
+        ? [
+            getVideoMediaUrl(item.id),
+            getDirectMediaUrl(item.id),
+          ].filter((url, index, all) => url && all.indexOf(url) === index)
+        : [],
+    [item.id],
+  )
+  const [sourceIndex, setSourceIndex] = useState(0)
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
@@ -28,12 +38,18 @@ export default function VideoModal({ item, onClose }) {
   }, [onClose])
 
   function handleMediaError() {
-    setUseDrivePreview(true)
+    setSourceIndex((index) => index + 1)
   }
 
-  const location = item.path.length
-    ? `${item.categoryName} · ${item.path.join(' / ')}`
-    : item.categoryName
+  const source = sources[sourceIndex]
+  const useDrivePreview = sources.length === 0 || sourceIndex >= sources.length
+  const location = [
+    item.categoryName,
+    ...(Array.isArray(item.path) ? item.path : []),
+    item.variant,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div
@@ -82,13 +98,19 @@ export default function VideoModal({ item, onClose }) {
 
         <div className="flex-1 bg-black">
           {useDrivePreview ? (
-            <iframe
-              src={getDrivePreviewUrl(item.id)}
-              title={item.name}
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              className="h-[70svh] w-full"
-            />
+            item.id ? (
+              <iframe
+                src={getDrivePreviewUrl(item.id)}
+                title={item.name}
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                className="h-[70svh] w-full"
+              />
+            ) : (
+              <div className="grid h-[70svh] place-items-center px-6 text-center text-sm text-white/60">
+                This video is unavailable.
+              </div>
+            )
           ) : (
             <video
               key={source}

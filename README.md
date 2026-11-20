@@ -15,7 +15,7 @@ by Google Drive. No backend, database or extra services — just GitHub Pages.
 - Static snapshot (library + folder order) loaded without a spinner.
 - Auto-sync every 15 minutes (without a snapshot), manual sync and local cache.
 - Keeps the previous library visible during a new sync.
-- Monthly 4-digit PIN, with optional acceptance of the previous month's PIN.
+- Daily 4-digit PIN that rotates at local midnight; yesterday's PIN stops working.
 - Access state persisted in `localStorage` (the PIN is never saved).
 - Teacher's area at `/teachers` (and `/#/teachers`).
 - Fixed audio player with play/pause, previous/next, progress, duration, volume,
@@ -74,22 +74,22 @@ the affected series shows the error.
 
 ### Verified IDs
 
-`AUDIO_FOLDERS` currently contains the Adults series:
+`AUDIO_FOLDERS` and `VIDEO_FOLDERS` currently contain the Adults series:
 
-| Series | Audio folder |
-| --- | --- |
-| Adults | `10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb` |
+| Series | Audio folder | Video folder |
+| --- | --- | --- |
+| Adults | `10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb` | `1s5BCEVdz0-eM2tYCrBRwnTQeAWaiQuD6` |
 
 The Drive layout is `Series / Course / Lesson` — for example
 `Adults / Essentials 1 / LESSON 01`. Courses appear in the sidebar submenu and
-lessons become collapsible sections. Video categories are unchanged until the
-video series folders are configured.
+lessons become collapsible sections. Videos use the same layout, with the
+subtitle folders as lessons.
 
 To add another series (Teens, TeenStation, Kids), add a `{ name, id }` object to
 `AUDIO_FOLDERS` and/or `VIDEO_FOLDERS` in `src/config/drive.js`. Nothing else
 needs to change.
 
-## 2. Monthly PIN and teacher's area
+## 2. Daily PIN and teacher's area
 
 Set the secrets in `.env` (or GitHub Actions secrets) before publishing:
 
@@ -102,16 +102,14 @@ VITE_OWNER_PASSWORD=9876
 `VITE_STAFF_PASSWORD` and `VITE_OWNER_PASSWORD` are 4-digit PINs. Use different
 values and avoid obvious sequences.
 
-- The PIN is exactly 4 digits, derived deterministically from
-  `month + year + VITE_SECRET_SALT`.
-- The current month's PIN is always accepted.
-- With `ACCEPT_PREVIOUS_MONTH = true` (default), last month's PIN also works
-  during the current month.
-- Older PINs are treated as expired.
+- The PIN is exactly 4 digits, derived deterministically from the local day and
+  `VITE_SECRET_SALT`. Consecutive days never produce the same PIN.
+- Only today's PIN is accepted; yesterday's PIN is rejected as expired.
 - On success, only `{ authorized, period, expiresAt }` is saved in
   `localStorage` — never the PIN in plain text.
-- Access lasts until the end of the current month. After that, the student asks
-  the teacher for the new PIN.
+- Access lasts until local midnight. After that, the student asks the teacher
+  for the new PIN. The session check runs at midnight, so a previous day's
+  authorization isn't kept for extra minutes.
 
 The teacher's area is at:
 
@@ -120,8 +118,9 @@ The teacher's area is at:
   app).
 
 The login uses the same style as the student PIN screen and asks for
-`VITE_STAFF_PASSWORD`. It then shows the current PIN, its month/year, the
-previous PIN when applicable and a copy button.
+`VITE_STAFF_PASSWORD`. It then shows today's PIN, its date, a copy button and a
+countdown to the next PIN. The page refreshes automatically at midnight, so the
+code and countdown never go stale.
 
 At the bottom is the **Admin** panel, which asks for the second PIN,
 `VITE_OWNER_PASSWORD`. Sync and folder order unlock only after that. Use
@@ -170,7 +169,7 @@ Folder sections start collapsed. Tap the folder header to expand or collapse.
 | Key | Contents |
 | --- | --- |
 | `media.library.v1` | Library cache + last sync time |
-| `media.access.v1` | Authorization state and validity period (no PIN) |
+| `media.access.v2` | Authorization state and validity period (no PIN) |
 | `media.player.v1` | Audio player volume |
 | `media.folderOrder.v2` | Folder order draft (cleared on publish) |
 
@@ -246,8 +245,10 @@ public/
 3. Play an audio: play/pause, progress, volume, previous/next and continuous
    playback.
 4. Open a video: playback, controls, fullscreen and mobile behavior.
-5. Generate the PIN at `/#/teachers` and enter it on the student screen.
-6. Confirm last month's PIN is accepted and an older PIN returns "expired".
+5. Generate the PIN at `/#/teachers`, check the countdown and enter it on the
+   student screen.
+6. Confirm yesterday's PIN is rejected as expired and a current one works. Keep
+   the teacher page open past midnight and check that it switches to the new PIN.
 7. Reload and confirm access persists in `localStorage`.
 8. Add, remove and rename a file in Drive; wait for sync (or use **Sync** in the
    **Admin** panel) and check the change notice.

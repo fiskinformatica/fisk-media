@@ -15,12 +15,8 @@ export const AUDIO_FOLDERS = [
 ]
 
 export const VIDEO_FOLDERS = [
-  { name: 'Essentials 1', id: '1Im0EZZghHm27P2TAOKX5eD0Vv5ZmEpm-' },
-  { name: 'Essentials 2', id: '17Jnd7Mq5B1uDzJ408QU4MjzMYgIor-dz' },
-  { name: 'Transitions 1', id: '1jOAeE5_1OhPbmfv2hM21yGeJV8ZjzwG8' },
-  { name: 'Transitions 2', id: '1pSCHDCYvobzp7JXmnp9dID1BKnczriQA' },
-  { name: 'Fluency 1', id: '1qNiNdt_XhRPxRAv2f694Fy7uqKucIMOu' },
-  { name: 'Fluency 2', id: '1j5l0S7_kGLwFyFC7JdNFmsi8P9PpnoE2' },
+  { name: 'Adults', id: '1s5BCEVdz0-eM2tYCrBRwnTQeAWaiQuD6' },
+  { name: 'Teens', id: '1gEBUgQgGb-vIu-ltYg35ojnI1IBKUMt6' },
 ]
 
 /**

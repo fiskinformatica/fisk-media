@@ -23,8 +23,10 @@ export const STAFF_PASSWORD =
 export const OWNER_PASSWORD =
   (import.meta.env.VITE_OWNER_PASSWORD ?? '').trim() || '9999'
 
-/** The previous month's PIN is also accepted during the current month. */
-export const ACCEPT_PREVIOUS_MONTH = true
+/** Kept for compatibility with cached modules; daily PINs have no grace period. */
+export const ACCEPT_PREVIOUS_MONTH = false
 
 export const PIN_LENGTH = 4
-export const ACCESS_STORAGE_KEY = 'media.access.v1'
+
+/** Bumped when the PIN period changes so old authorizations are ignored. */
+export const ACCESS_STORAGE_KEY = 'media.access.v2'

@@ -1,3 +1,5 @@
+import { normalizeLibrary } from '../utils/normalize.js'
+
 const SNAPSHOT_FILE = 'library.json'
 const BASE_URL = import.meta.env.BASE_URL || './'
 
@@ -25,7 +27,11 @@ export async function fetchSnapshot({ signal } = {}) {
     const snapshot = await response.json()
     if (snapshot?.v !== 1 || !isValidLibrary(snapshot.library)) return null
 
-    return snapshot
+    const library = normalizeLibrary(snapshot.library)
+    const errors = (library.errors ?? []).filter(
+      (entry) => entry?.code !== 'NETWORK',
+    )
+    return { ...snapshot, library: { ...library, errors } }
   } catch {
     return null
   }

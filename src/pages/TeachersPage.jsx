@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Lock,
   LogOut,
   ShieldCheck,
+  Timer,
   TriangleAlert,
 } from 'lucide-react'
 import AdminPanel from '../components/AdminPanel.jsx'
@@ -18,6 +19,7 @@ import {
   STAFF_PASSWORD,
 } from '../config/access.js'
 import { getAdminPinInfo } from '../services/accessService.js'
+import { formatDuration } from '../utils/format.js'
 
 const USING_DEFAULTS =
   SECRET_SALT === 'CHANGE-THIS-SECRET' ||
@@ -26,8 +28,8 @@ const USING_DEFAULTS =
 
 function formatValidUntil(date) {
   return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   }).format(date)
 }
 
@@ -103,6 +105,23 @@ export default function TeachersPage() {
   const [pinInfo, setPinInfo] = useState(null)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!pinInfo) return undefined
+
+    const intervalId = window.setInterval(() => {
+      const current = Date.now()
+      setNow(current)
+
+      if (current >= pinInfo.validUntil.getTime()) {
+        setPinInfo(getAdminPinInfo())
+        setCopied(false)
+      }
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [pinInfo])
 
   function handleChange(event) {
     const nextPin = event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
@@ -121,6 +140,7 @@ export default function TeachersPage() {
 
     setError(null)
     setPin('')
+    setNow(Date.now())
     setPinInfo(getAdminPinInfo())
   }
 
@@ -155,7 +175,7 @@ export default function TeachersPage() {
                 Teacher's area
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-                Enter your PIN to view this month's access code.
+                Enter your PIN to view today's access code.
               </p>
             </div>
 
@@ -204,7 +224,7 @@ export default function TeachersPage() {
             </form>
 
             <p className="mt-5 text-center text-xs leading-relaxed text-stone-400">
-              Teachers only. Student PIN changes monthly.
+              Teachers only. Student PIN changes daily at midnight.
             </p>
           </div>
 
@@ -220,6 +240,10 @@ export default function TeachersPage() {
     )
   }
 
+  const countdown = formatDuration(
+    Math.max(0, Math.ceil((pinInfo.validUntil.getTime() - now) / 1000)),
+  )
+
   return (
     <main className="flex min-h-svh flex-col px-4 py-6 sm:py-10">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4">
@@ -232,7 +256,7 @@ export default function TeachersPage() {
             </span>
             <p className="eyebrow">Access PIN</p>
             <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900">
-              {pinInfo.monthLabel}
+              {pinInfo.dayLabel}
             </h1>
           </div>
 
@@ -255,19 +279,16 @@ export default function TeachersPage() {
             {copied ? 'PIN copied' : 'Copy PIN'}
           </button>
 
-          <div className="mt-5 space-y-2 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700 tabular-nums">
+            <Timer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            New PIN in {countdown}
+          </div>
+
+          <div className="mt-5 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
             <p>
               Valid until {formatValidUntil(pinInfo.validUntil)}. A new PIN is
-              generated next month.
+              generated at midnight; the previous day's PIN stops working.
             </p>
-            {pinInfo.acceptsPreviousMonth && (
-              <p>
-                Previous PIN also valid:{' '}
-                <strong className="font-medium text-stone-700">
-                  {pinInfo.previousPin}
-                </strong>
-              </p>
-            )}
           </div>
 
           {USING_DEFAULTS && (

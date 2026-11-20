@@ -10,11 +10,11 @@ export default function FolderSection({ name, parent, count, children }) {
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className={`flex w-full items-center gap-2 bg-stone-50/60 px-3 py-2.5 text-left transition hover:bg-stone-100/70 sm:px-4 ${
+        className={`group flex w-full items-center gap-2 bg-stone-50/60 px-3 py-2.5 text-left transition-colors duration-200 ease-out hover:bg-stone-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 sm:px-4 ${
           open ? 'border-b border-stone-100' : ''
         }`}
       >
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600 transition-colors duration-200 group-hover:bg-brand-100">
           <Folder className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
 
@@ -29,19 +29,19 @@ export default function FolderSection({ name, parent, count, children }) {
           )}
         </span>
 
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70">
+        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70 transition-colors duration-200 group-hover:text-brand-600">
           {count}
         </span>
 
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-stone-400 transition-transform ${
+          className={`h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 ease-out ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden="true"
         />
       </button>
 
-      {open && <div className="animate-fade-in">{children}</div>}
+      {open && <div className="animate-list-in">{children}</div>}
     </section>
   )
 }

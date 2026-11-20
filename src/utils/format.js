@@ -15,6 +15,13 @@ const monthFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+const dayFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+})
+
 export function formatDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
 
@@ -66,6 +73,11 @@ export function formatLastSync(timestamp) {
 
 export function formatMonthYear(date = new Date()) {
   const label = monthFormatter.format(date)
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+export function formatDayLabel(date = new Date()) {
+  const label = dayFormatter.format(date)
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 

@@ -7,6 +7,7 @@ import {
 } from '../services/driveService.js'
 import { fetchSnapshot } from '../services/snapshotService.js'
 import { setSharedOrders } from '../utils/folderOrder.js'
+import { normalizeLibrary } from '../utils/normalize.js'
 import { readJson, writeJson } from '../utils/storage.js'
 
 const CACHE_KEY = 'media.library.v1'
@@ -17,7 +18,11 @@ function readCache() {
   if (!Array.isArray(cache.library.audio) || !Array.isArray(cache.library.video)) {
     return null
   }
-  return cache
+  const library = normalizeLibrary(cache.library)
+  const errors = (library.errors ?? []).filter(
+    (entry) => entry?.code !== 'NETWORK',
+  )
+  return { ...cache, library: { ...library, errors } }
 }
 
 export function useLibrary({ autoSync = true } = {}) {

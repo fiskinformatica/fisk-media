@@ -61,16 +61,16 @@ export default function AudioList({
                   key={item.id}
                   type="button"
                   onClick={() => onSelect(item)}
-                  className={`group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors sm:px-4 sm:py-3 ${
+                  className={`media-row group ${
                     isActive ? 'bg-brand-50/60' : 'hover:bg-stone-50'
                   }`}
                 >
                   <span
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition ${
-                      isActive
-                        ? 'bg-brand-600 text-white'
-                        : 'bg-stone-100 text-stone-500 group-hover:bg-brand-600 group-hover:text-white'
-                    }`}
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-[background-color,color,transform] duration-200 ease-out group-active:scale-95 ${
+                        isActive
+                          ? 'bg-brand-600 text-white'
+                          : 'bg-stone-100 text-stone-500 group-hover:bg-brand-600 group-hover:text-white'
+                      }`}
                   >
                     {isActive && isPlaying ? (
                       <Equalizer />
@@ -99,7 +99,7 @@ export default function AudioList({
                   </span>
 
                   {isActive && (
-                    <span className="hidden shrink-0 items-center gap-1.5 text-xs font-medium text-brand-600 sm:flex">
+                    <span className="hidden shrink-0 animate-fade-in items-center gap-1.5 text-xs font-medium text-brand-600 sm:flex">
                       {isPlaying ? 'Playing' : 'Paused'}
                     </span>
                   )}

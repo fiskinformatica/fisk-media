@@ -1,5 +1,5 @@
 export function getCourseName(item) {
-  return item.path?.length > 1 ? item.path[0] : null
+  return item.path?.length > 0 ? item.path[0] : null
 }
 
 export function groupMediaByFolder(items, { pathOffset = 0 } = {}) {

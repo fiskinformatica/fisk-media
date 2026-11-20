@@ -1,42 +1,53 @@
-import {
-  ACCEPT_PREVIOUS_MONTH,
-  ACCESS_STORAGE_KEY,
-  PIN_LENGTH,
-  SECRET_SALT,
-} from '../config/access.js'
+import { ACCESS_STORAGE_KEY, PIN_LENGTH, SECRET_SALT } from '../config/access.js'
 import { readJson, removeStorage, writeJson } from '../utils/storage.js'
-import { formatMonthYear } from '../utils/format.js'
+import { formatDayLabel } from '../utils/format.js'
 
-function monthKeyOf(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+const MS_PER_DAY = 86_400_000
+const PIN_STEP = 7
+
+function dayKeyOf(date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
 }
 
-function shiftMonth(date, amount) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1)
+function shiftDay(date, amount) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount)
 }
 
-function endOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 1)
+function nextMidnight(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+}
+
+function dayNumber(date) {
+  return Math.floor(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / MS_PER_DAY,
+  )
 }
 
 /**
  * Simple deterministic 4-digit PIN. Intentionally not cryptographic: the goal
- * is casual access control for a static site, not security.
+ * is casual access control for a static site, not security. PIN_STEP is coprime
+ * with 10,000, so consecutive days never share a PIN.
  */
-function pinFromSeed(seed) {
+function hashSeed(seed) {
   let hash = 7
   for (let index = 0; index < seed.length; index += 1) {
     hash = (hash * 31 + seed.charCodeAt(index)) % 1_000_003
   }
+  return hash
+}
+
+function pinFromHash(hash) {
   return String((hash * 7 + 13) % 10_000).padStart(PIN_LENGTH, '0')
 }
 
-export function generateMonthlyPin(date = new Date()) {
-  return pinFromSeed(`${monthKeyOf(date)}:${SECRET_SALT}`)
+export function generateDailyPin(date = new Date()) {
+  return pinFromHash(hashSeed(SECRET_SALT) + dayNumber(date) * PIN_STEP)
 }
 
 /**
- * @returns {{ ok: boolean, reason: 'ok'|'incorrect'|'expired'|'invalid', periodKey?: string, matched?: 'current'|'previous' }}
+ * @returns {{ ok: boolean, reason: 'ok'|'incorrect'|'expired'|'invalid', periodKey?: string }}
  */
 export function validatePin(input, date = new Date()) {
   const pin = String(input ?? '')
@@ -47,27 +58,13 @@ export function validatePin(input, date = new Date()) {
     return { ok: false, reason: 'invalid' }
   }
 
-  if (pin === generateMonthlyPin(date)) {
-    return {
-      ok: true,
-      reason: 'ok',
-      periodKey: monthKeyOf(date),
-      matched: 'current',
-    }
+  if (pin === generateDailyPin(date)) {
+    return { ok: true, reason: 'ok', periodKey: dayKeyOf(date) }
   }
 
-  if (ACCEPT_PREVIOUS_MONTH && pin === generateMonthlyPin(shiftMonth(date, -1))) {
-    return {
-      ok: true,
-      reason: 'ok',
-      periodKey: monthKeyOf(date),
-      matched: 'previous',
-    }
-  }
-
-  // Recognize older PINs so the UI can say "expirado" instead of "incorreto".
-  for (let monthsBack = 2; monthsBack <= 12; monthsBack += 1) {
-    if (pin === generateMonthlyPin(shiftMonth(date, -monthsBack))) {
+  // Recognize PINs from previous days so the UI can say "expirado".
+  for (let daysBack = 1; daysBack <= 30; daysBack += 1) {
+    if (pin === generateDailyPin(shiftDay(date, -daysBack))) {
       return { ok: false, reason: 'expired' }
     }
   }
@@ -77,10 +74,10 @@ export function validatePin(input, date = new Date()) {
 
 export function createAuthorization(date = new Date()) {
   return {
-    v: 1,
+    v: 2,
     authorized: true,
-    period: monthKeyOf(date),
-    expiresAt: endOfMonth(date).toISOString(),
+    period: dayKeyOf(date),
+    expiresAt: nextMidnight(date).toISOString(),
   }
 }
 
@@ -94,7 +91,7 @@ export function clearAuthorization() {
 
 export function readAuthorization() {
   const stored = readJson(ACCESS_STORAGE_KEY)
-  if (!stored || stored.v !== 1 || stored.authorized !== true) return null
+  if (!stored || stored.v !== 2 || stored.authorized !== true) return null
   if (!stored.expiresAt) return null
 
   const expiresAt = Date.parse(stored.expiresAt)
@@ -105,7 +102,7 @@ export function readAuthorization() {
 
 export function hasExpiredAuthorization() {
   const stored = readJson(ACCESS_STORAGE_KEY)
-  if (!stored || stored.v !== 1 || stored.authorized !== true) return false
+  if (!stored || stored.v !== 2 || stored.authorized !== true) return false
   if (!stored.expiresAt) return false
 
   const expiresAt = Date.parse(stored.expiresAt)
@@ -114,11 +111,9 @@ export function hasExpiredAuthorization() {
 
 export function getAdminPinInfo(date = new Date()) {
   return {
-    currentPin: generateMonthlyPin(date),
-    previousPin: ACCEPT_PREVIOUS_MONTH ? generateMonthlyPin(shiftMonth(date, -1)) : null,
-    periodKey: monthKeyOf(date),
-    monthLabel: formatMonthYear(date),
-    acceptsPreviousMonth: ACCEPT_PREVIOUS_MONTH,
-    validUntil: endOfMonth(date),
+    currentPin: generateDailyPin(date),
+    periodKey: dayKeyOf(date),
+    dayLabel: formatDayLabel(date),
+    validUntil: nextMidnight(date),
   }
 }

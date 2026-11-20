@@ -48,7 +48,7 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
 
           {sessionExpired && !message && (
             <div className="mb-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800">
-              Your session expired. Use this month's PIN.
+              Your session expired. Use today's PIN.
             </div>
           )}
 
@@ -97,7 +97,7 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
           </form>
 
           <p className="mt-5 text-center text-xs leading-relaxed text-stone-400">
-            The PIN changes monthly. <br /> Ask your teacher for a new one.
+            The PIN changes daily at midnight. <br /> Ask your teacher for a new one.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
               Teacher's area
             </span>
             <span className="block text-xs leading-snug text-stone-400">
-              Monthly PIN and admin tools
+              Daily PIN and admin tools
             </span>
           </span>
           <ArrowUpRight

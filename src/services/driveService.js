@@ -5,10 +5,13 @@ import {
   DRIVE_PAGE_SIZE,
   VIDEO_FOLDERS,
 } from '../config/drive.js'
+import { normalizeLibrary } from '../utils/normalize.js'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 const SHORTCUT_MIME = 'application/vnd.google-apps.shortcut'
-const REQUEST_CONCURRENCY = 6
+const REQUEST_CONCURRENCY = 4
+const REQUEST_TIMEOUT_MS = 15000
+const RETRY_DELAYS = [250, 600]
 
 const AUDIO_EXTENSION = /\.(mp3|m4a|aac|wav|oga|ogg|opus|flac|aiff|aif)$/i
 const VIDEO_EXTENSION = /\.(mp4|m4v|mov|webm|ogv|mkv|avi)$/i
@@ -65,6 +68,55 @@ async function readError(response) {
   }
 }
 
+function waitForRetry(delay, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      const error = new Error('Aborted')
+      error.name = 'AbortError'
+      reject(error)
+      return
+    }
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, delay)
+
+    function onAbort() {
+      clearTimeout(timer)
+      const error = new Error('Aborted')
+      error.name = 'AbortError'
+      reject(error)
+    }
+
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+async function fetchWithTimeout(url, signal) {
+  if (signal?.aborted) {
+    const error = new Error('Aborted')
+    error.name = 'AbortError'
+    throw error
+  }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  function onAbort() {
+    controller.abort()
+  }
+
+  signal?.addEventListener('abort', onAbort, { once: true })
+
+  try {
+    return await fetch(url, { signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
+
 async function fetchFilesPage(folderId, pageToken, signal) {
   const params = new URLSearchParams({
     q: `'${folderId}' in parents and trashed = false`,
@@ -78,20 +130,41 @@ async function fetchFilesPage(folderId, pageToken, signal) {
 
   if (pageToken) params.set('pageToken', pageToken)
 
-  const response = await fetch(`${DRIVE_API_BASE}/files?${params.toString()}`, {
-    signal,
-  })
+  const url = `${DRIVE_API_BASE}/files?${params.toString()}`
 
-  if (!response.ok) {
-    const detail = await readError(response)
-    const error = new Error(
-      detail || `Google Drive returned status ${response.status}.`,
-    )
-    error.status = response.status
-    throw error
+  for (let attempt = 0; ; attempt += 1) {
+    let response
+
+    try {
+      response = await fetchWithTimeout(url, signal)
+    } catch (error) {
+      const timedOut = error.name === 'AbortError' && !signal?.aborted
+      const networkError =
+        !timedOut &&
+        !signal?.aborted &&
+        error.name !== 'AbortError' &&
+        !error.status
+
+      if ((timedOut || networkError) && attempt < RETRY_DELAYS.length) {
+        await waitForRetry(RETRY_DELAYS[attempt], signal)
+        continue
+      }
+
+      if (timedOut) throw new Error('Request timed out.')
+      throw error
+    }
+
+    if (!response.ok) {
+      const detail = await readError(response)
+      const error = new Error(
+        detail || `Google Drive returned status ${response.status}.`,
+      )
+      error.status = response.status
+      throw error
+    }
+
+    return response.json()
   }
-
-  return response.json()
 }
 
 export async function listAllFiles(folderId, { signal } = {}) {
@@ -144,6 +217,9 @@ function describeError(error, categoryName) {
   if (error.status === 404) {
     return `Folder "${categoryName}" not found. Check the ID in src/config/drive.js.`
   }
+  if (!error.status) {
+    return `Couldn't reach this folder. It will be retried on the next sync.`
+  }
   return error.message || "Couldn't reach Google Drive."
 }
 
@@ -171,6 +247,7 @@ async function collectCategory(root, kind, { limit, signal, errors, onScan }) {
         category: root.name,
         path: path.join(' / ') || root.name,
         message: describeError(error, root.name),
+        code: error.status ? undefined : 'NETWORK',
       })
       return
     }
@@ -268,7 +345,7 @@ export async function fetchLibrary({ signal, onProgress } = {}) {
     .filter((result) => result.kind === 'video')
     .map((result) => result.category)
 
-  return {
+  return normalizeLibrary({
     version: 1,
     fetchedAt: new Date().toISOString(),
     audio,
@@ -280,7 +357,7 @@ export async function fetchLibrary({ signal, onProgress } = {}) {
       audio: audio.reduce((total, category) => total + category.items.length, 0),
       video: video.reduce((total, category) => total + category.items.length, 0),
     },
-  }
+  })
 }
 
 function flattenLibrary(library) {
