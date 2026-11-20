@@ -4,6 +4,7 @@ import {
   ChevronUp,
   Folder,
   FolderCog,
+  GripVertical,
   RotateCcw,
 } from 'lucide-react'
 import MediaTabs from './MediaTabs.jsx'
@@ -20,6 +21,8 @@ export default function FolderOrderPanel({ library }) {
   const [categoryId, setCategoryId] = useState('')
   const [selectedCourseName, setSelectedCourseName] = useState(null)
   const [draft, setDraft] = useState({ id: null, keys: [] })
+  const [drag, setDrag] = useState(null)
+  const [dropTarget, setDropTarget] = useState(null)
 
   const categories = library?.[kind] ?? []
   const activeCategory =
@@ -101,18 +104,39 @@ export default function FolderOrderPanel({ library }) {
     setKind(nextKind)
     setCategoryId('')
     setSelectedCourseName(null)
+    setDrag(null)
+    setDropTarget(null)
+  }
+
+  function handleCategoryChange(id) {
+    setCategoryId(id)
+    setSelectedCourseName(null)
+    setDrag(null)
+    setDropTarget(null)
+  }
+
+  function reorderGroup(groups, orderId, from, to, save) {
+    if (!orderId) return
+
+    const keys = groups.map((group) => group.key)
+    if (
+      from < 0 ||
+      to < 0 ||
+      from >= keys.length ||
+      to >= keys.length ||
+      from === to
+    ) {
+      return
+    }
+
+    const [moved] = keys.splice(from, 1)
+    keys.splice(to, 0, moved)
+    setDraft({ id: orderId, keys })
+    save(keys)
   }
 
   function moveGroup(groups, orderId, index, offset, save) {
-    if (!orderId) return
-
-    const target = index + offset
-    const keys = groups.map((group) => group.key)
-    if (target < 0 || target >= keys.length) return
-
-    ;[keys[index], keys[target]] = [keys[target], keys[index]]
-    setDraft({ id: orderId, keys })
-    save(keys)
+    reorderGroup(groups, orderId, index, index + offset, save)
   }
 
   function moveCourse(index, offset) {
@@ -131,21 +155,72 @@ export default function FolderOrderPanel({ library }) {
     )
   }
 
+  function reorderCourse(from, to) {
+    if (!activeCategory) return
+
+    reorderGroup(orderedCourseGroups, courseOrderId, from, to, (keys) =>
+      saveFolderOrder(kind, activeCategory.id, keys),
+    )
+  }
+
+  function reorderLesson(from, to) {
+    if (!activeCategory) return
+
+    reorderGroup(orderedLessonGroups, lessonOrderId, from, to, (keys) =>
+      saveFolderOrder(kind, activeCategory.id, keys, activeCourse),
+    )
+  }
+
   function resetOrder() {
     if (!activeCategory) return
 
     clearFolderOrder(kind, activeCategory.id)
     if (activeCourse) clearFolderOrder(kind, activeCategory.id, activeCourse)
     setDraft({ id: null, keys: [] })
+    setDrag(null)
+    setDropTarget(null)
   }
 
-  function renderGroup(group, index, groups, onMove) {
+  function renderGroup(group, index, groups, scope, onMove, onReorder) {
     const count = group.items?.length ?? group.count ?? 0
+    const isDragging = drag?.scope === scope && drag.index === index
+    const isDropTarget = dropTarget?.scope === scope && dropTarget.index === index
+
+    function handleDragStart(event) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', String(index))
+      setDrag({ scope, index })
+    }
+
+    function handleDragOver(event) {
+      if (!drag || drag.scope !== scope) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+      setDropTarget({ scope, index })
+    }
+
+    function handleDrop(event) {
+      event.preventDefault()
+      if (drag?.scope === scope) onReorder(drag.index, index)
+      setDrag(null)
+      setDropTarget(null)
+    }
+
+    function handleDragEnd() {
+      setDrag(null)
+      setDropTarget(null)
+    }
 
     return (
       <li
         key={group.key || 'root'}
-        className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-white px-3 py-2.5"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 transition ${
+          isDragging ? 'opacity-40' : ''
+        } ${
+          isDropTarget ? 'border-brand-300 ring-2 ring-brand-100' : 'border-stone-200'
+        }`}
       >
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
           <Folder className="h-3.5 w-3.5" aria-hidden="true" />
@@ -162,6 +237,16 @@ export default function FolderOrderPanel({ library }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
+          <span
+            draggable
+            role="img"
+            aria-label={`Drag to reorder ${group.name}`}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            className="grid h-8 w-6 shrink-0 cursor-grab place-items-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 active:cursor-grabbing"
+          >
+            <GripVertical className="h-4 w-4" aria-hidden="true" />
+          </span>
           <button
             type="button"
             onClick={() => onMove(index, -1)}
@@ -196,7 +281,7 @@ export default function FolderOrderPanel({ library }) {
             Folder order
           </h3>
           <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
-            Set the order folders appear in the library.
+            Drag to reorder, or use the arrows.
           </p>
         </div>
       </div>
@@ -223,10 +308,7 @@ export default function FolderOrderPanel({ library }) {
 
             <select
               value={activeCategory?.id ?? ''}
-              onChange={(event) => {
-                setCategoryId(event.target.value)
-                setSelectedCourseName(null)
-              }}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               aria-label="Series"
               className="field-control h-10 min-w-0 px-3 text-sm sm:w-56"
             >
@@ -243,7 +325,11 @@ export default function FolderOrderPanel({ library }) {
               <span className="sr-only">Course</span>
               <select
                 value={activeCourse ?? ''}
-                onChange={(event) => setSelectedCourseName(event.target.value)}
+                onChange={(event) => {
+                  setSelectedCourseName(event.target.value)
+                  setDrag(null)
+                  setDropTarget(null)
+                }}
                 aria-label="Course"
                 className="field-control h-10 w-full px-3 text-sm"
               >
@@ -261,7 +347,14 @@ export default function FolderOrderPanel({ library }) {
               <p className="eyebrow mb-2">Course order</p>
               <ul className="space-y-2">
                 {orderedCourseGroups.map((group, index) =>
-                  renderGroup(group, index, orderedCourseGroups, moveCourse),
+                  renderGroup(
+                    group,
+                    index,
+                    orderedCourseGroups,
+                    'course',
+                    moveCourse,
+                    reorderCourse,
+                  ),
                 )}
               </ul>
             </div>
@@ -276,7 +369,14 @@ export default function FolderOrderPanel({ library }) {
               <p className="eyebrow mb-2">Lesson order</p>
               <ul className="space-y-2">
                 {orderedLessonGroups.map((group, index) =>
-                  renderGroup(group, index, orderedLessonGroups, moveLesson),
+                  renderGroup(
+                    group,
+                    index,
+                    orderedLessonGroups,
+                    'lesson',
+                    moveLesson,
+                    reorderLesson,
+                  ),
                 )}
               </ul>
             </div>

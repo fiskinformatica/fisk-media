@@ -251,8 +251,9 @@ public/
 7. Reload and confirm access persists in `localStorage`.
 8. Add, remove and rename a file in Drive; wait for sync (or use **Sync** in the
    **Admin** panel) and check the change notice.
-9. Unlock **Admin** with `VITE_OWNER_PASSWORD`, reorder courses and lessons and
-   confirm the new order in the library. Use **Sign out** to lock it again.
+9. Unlock **Admin** with `VITE_OWNER_PASSWORD`, drag courses and lessons (or use
+   the arrows), confirm the new order in the library and use **Sign out** to
+   lock it again.
 10. Confirm folder sections start collapsed and expand/collapse on tap.
 11. Test an empty folder and a folder without public sharing.
 12. Click **Download snapshot**, replace `public/library.json` with the file and
