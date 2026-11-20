@@ -35,34 +35,34 @@ function readStore() {
   return stored
 }
 
-function orderId(kind, categoryId) {
-  return `${kind}:${categoryId}`
+function orderId(kind, categoryId, course = null) {
+  return `${kind}:${categoryId}${course ? `:${course}` : ''}`
 }
 
-export function readFolderOrder(kind, categoryId) {
+export function readFolderOrder(kind, categoryId, course = null) {
   if (!categoryId) return []
 
-  const key = orderId(kind, categoryId)
+  const key = orderId(kind, categoryId, course)
   const order = readStore().orders[key]
   if (Array.isArray(order)) return order
 
   return Array.isArray(sharedOrders[key]) ? sharedOrders[key] : []
 }
 
-export function saveFolderOrder(kind, categoryId, keys) {
+export function saveFolderOrder(kind, categoryId, keys, course = null) {
   if (!categoryId) return
 
-  const key = orderId(kind, categoryId)
+  const key = orderId(kind, categoryId, course)
   const store = readStore()
   store.orders[key] = keys
   sharedOrders[key] = keys
   writeJson(STORAGE_KEY, store)
 }
 
-export function clearFolderOrder(kind, categoryId) {
+export function clearFolderOrder(kind, categoryId, course = null) {
   if (!categoryId) return
 
-  const key = orderId(kind, categoryId)
+  const key = orderId(kind, categoryId, course)
   const store = readStore()
   delete store.orders[key]
   delete sharedOrders[key]

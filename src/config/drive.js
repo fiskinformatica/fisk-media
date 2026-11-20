@@ -1,24 +1,17 @@
 /**
  * Google Drive folders that make up the library.
  *
- * IDs were checked against the original Drive folder links. The displayed name
- * is intentionally short; the numbered Drive folder name ("01. Essentials 1")
- * is not used in the UI.
+ * IDs were checked against the original Drive folder links. Each root is a
+ * series containing course folders, which contain lesson folders. The displayed
+ * name is intentionally short.
  *
- * To add a category, add the same folder shape to AUDIO_FOLDERS and/or
+ * To add a series, add the same folder shape to AUDIO_FOLDERS and/or
  * VIDEO_FOLDERS. No other code change is required.
  */
 
-
-
 export const AUDIO_FOLDERS = [
-  { name: 'Essentials 1', id: '13AkH5a-R3vo7GusDrtno2GT_Ziwa5a7n' },
-  { name: 'Essentials 2', id: '1ncrq4Rl4vIx-TS_-KHpLYsOjC8i1lwif' },
-  { name: 'Transitions 1', id: '1snq7mtHv0HJPr_SXokfYiHrou_u_ZEzi' },
-  { name: 'Transitions 2', id: '13yGr3Bo5rRUEvJ6JhIUo3HYxOEZr6BpW' },
-  { name: 'Fluency 1', id: '1cGMiNjdYqKC7WUFdtKaGMXcwpwEfe2NF' },
-  { name: 'Fluency 2', id: '161J8pT6z-T1htkCVybGelMpg3EM4kRxr' },
-  { name: 'In Focus', id: '1cA7b4vCjhuE0xa2EtQwHFA3rq3UbB8jv' },
+  { name: 'Adults', id: '10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb' },
+  { name: 'Teens', id: '1gboaaStHmKWUCpAFNsGt35eYP9wj07V0' },
 ]
 
 export const VIDEO_FOLDERS = [

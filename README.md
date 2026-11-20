@@ -67,28 +67,27 @@ VITE_GOOGLE_API_KEY=your-key-here
 
 ### Folder sharing
 
-The API key can only list and play public files. Share **all 13 folders and
-their contents** with **Anyone with the link · Viewer**. If a subfolder or file
-isn't public, it won't appear or won't play; the affected category shows the
-error.
+The API key can only list and play public files. Share the configured series
+root, every course/lesson folder and all files with **Anyone with the link ·
+Viewer**. If a subfolder or file isn't public, it won't appear or won't play;
+the affected series shows the error.
 
 ### Verified IDs
 
-These IDs were checked against the original Drive links. Names returned by
-Drive are shown in parentheses.
+`AUDIO_FOLDERS` currently contains the Adults series:
 
-| Category | Audio folder | Video folder |
-| --- | --- | --- |
-| Essentials 1 | `1vsn1Wzpq-igaSo_L3LieedKDU03F5up9` (`01. Essentials 1`) | `16wwTRWEQ_1jo_NKX8dvdY0YyoNR-2U8q` (`01. Essentials 1`) |
-| Essentials 2 | `14ZbR6JL8GVnA7YMvlNfOXfxj7aoYjnQE` (`02. Essentials 2`) | `1DwvtCelTY5tPPPe1m-doEVneDsK-DgFw` (`02. Essentials 2`) |
-| Transitions 1 | `1MVN-pk1ARtNTq4hnqh_ZiXnIhL7zmFja` (`03. Transitions 1`) | `1AOr0fHh5GhvCf397EM-xtV8hMFI23tVg` (`03. Transitions 1`) |
-| Transitions 2 | `1OjqutogX1_iweEMvh72fLc5jGk6obove` (`04. Transitions 2`) | `1YW7T7jaSA-Z6FNybIuMLl4dhjiCVneoq` (`04. Transitions 2`) |
-| Fluency 1 | `1rtyh87_Xt_p30z4hEkSSMgYi1EDaDPFy` (`05. Fluency 1`) | `1uVNsPa037xAFm1hMuayoEAf9nmUsltBC` (`05. Fluency 1`) |
-| Fluency 2 | `1FnLhKEC4VLJehLz9Lrg9WAPsi1CACn9C` (`06. Fluency 2`) | `1jHxWwFwK1wFWCm1b6AP9ZjA4DJtWGfa-` (`06. Fluency 2`) |
-| In Focus | `1ci02_Qt2OdWM_WOK736zn6TJKn7I241A` (`07. In Focus`) | — (no videos yet) |
+| Series | Audio folder |
+| --- | --- |
+| Adults | `10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb` |
 
-To add a category, add a `{ name, id }` object to `AUDIO_FOLDERS` and/or
-`VIDEO_FOLDERS` in `src/config/drive.js`. Nothing else needs to change.
+The Drive layout is `Series / Course / Lesson` — for example
+`Adults / Essentials 1 / LESSON 01`. Courses appear in the sidebar submenu and
+lessons become collapsible sections. Video categories are unchanged until the
+video series folders are configured.
+
+To add another series (Teens, TeenStation, Kids), add a `{ name, id }` object to
+`AUDIO_FOLDERS` and/or `VIDEO_FOLDERS` in `src/config/drive.js`. Nothing else
+needs to change.
 
 ## 2. Monthly PIN and teacher's area
 
@@ -242,8 +241,8 @@ public/
 
 ## 7. Manual test checklist
 
-1. Set the API key and confirm all 13 folders are queried.
-2. Open each category and check the real files and subfolders.
+1. Set the API key and confirm all configured series folders are queried.
+2. Open each series, choose a course and check the real files and subfolders.
 3. Play an audio: play/pause, progress, volume, previous/next and continuous
    playback.
 4. Open a video: playback, controls, fullscreen and mobile behavior.
@@ -252,8 +251,8 @@ public/
 7. Reload and confirm access persists in `localStorage`.
 8. Add, remove and rename a file in Drive; wait for sync (or use **Sync** in the
    **Admin** panel) and check the change notice.
-9. Unlock **Admin** with `VITE_OWNER_PASSWORD`, reorder folders and confirm the
-   new order in the library. Use **Sign out** to lock it again.
+9. Unlock **Admin** with `VITE_OWNER_PASSWORD`, reorder courses and lessons and
+   confirm the new order in the library. Use **Sign out** to lock it again.
 10. Confirm folder sections start collapsed and expand/collapse on tap.
 11. Test an empty folder and a folder without public sharing.
 12. Click **Download snapshot**, replace `public/library.json` with the file and

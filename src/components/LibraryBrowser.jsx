@@ -15,6 +15,7 @@ import VideoGrid from './VideoGrid.jsx'
 import VideoModal from './VideoModal.jsx'
 import { useAudioPlayer } from '../hooks/useAudioPlayer.js'
 import { useLibrary } from '../hooks/useLibrary.js'
+import { getCourseName } from '../utils/group.js'
 
 export default function LibraryBrowser({ onLock }) {
   const { library, error, hasData, apiConfigured, refresh } = useLibrary()
@@ -22,6 +23,7 @@ export default function LibraryBrowser({ onLock }) {
 
   const [tab, setTab] = useState('audio')
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedCourseName, setSelectedCourseName] = useState(null)
   const [video, setVideo] = useState(null)
 
   const categories = useMemo(() => {
@@ -33,7 +35,27 @@ export default function LibraryBrowser({ onLock }) {
     categories.find((category) => category.id === selectedId) ??
     categories[0] ??
     null
-  const items = selectedCategory?.items ?? []
+  const items = useMemo(() => selectedCategory?.items ?? [], [selectedCategory])
+
+  const courses = useMemo(() => {
+    const counts = new Map()
+    for (const item of items) {
+      const name = getCourseName(item)
+      if (!name) continue
+      counts.set(name, (counts.get(name) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }))
+  }, [items])
+
+  const selectedCourse =
+    courses.find((course) => course.name === selectedCourseName)?.name ??
+    courses[0]?.name ??
+    null
+  const courseItems = selectedCourse
+    ? items.filter((item) => getCourseName(item) === selectedCourse)
+    : items
 
   const categoryErrors = useMemo(() => {
     if (!library || !selectedCategory) return []
@@ -48,6 +70,12 @@ export default function LibraryBrowser({ onLock }) {
   function handleTabChange(nextTab) {
     setTab(nextTab)
     setSelectedId(null)
+    setSelectedCourseName(null)
+  }
+
+  function handleSelectCategory(id) {
+    setSelectedId(id)
+    setSelectedCourseName(null)
   }
 
   function handleSelectAudio(item) {
@@ -56,7 +84,7 @@ export default function LibraryBrowser({ onLock }) {
       return
     }
 
-    player.playTrack(item, items)
+    player.playTrack(item, courseItems)
   }
 
   function handleOpenVideo(item) {
@@ -106,8 +134,11 @@ export default function LibraryBrowser({ onLock }) {
           <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
             <CategorySidebar
               categories={categories}
+              courses={courses}
               selectedId={selectedCategory?.id ?? null}
-              onSelect={setSelectedId}
+              selectedCourse={selectedCourse}
+              onSelect={handleSelectCategory}
+              onSelectCourse={setSelectedCourseName}
               kind={tab}
             />
 
@@ -119,13 +150,14 @@ export default function LibraryBrowser({ onLock }) {
                       {selectedCategory.name}
                     </h2>
                     <p className="mt-0.5 text-xs text-stone-400">
-                      {items.length} {items.length === 1 ? 'file' : 'files'}
+                      {courseItems.length}{' '}
+                      {courseItems.length === 1 ? 'file' : 'files'}
                     </p>
                   </div>
 
                   <CategoryError errors={categoryErrors} />
 
-                  {items.length === 0 ? (
+                  {courseItems.length === 0 ? (
                     <EmptyState
                       description={
                         tab === 'audio'
@@ -135,23 +167,25 @@ export default function LibraryBrowser({ onLock }) {
                     />
                   ) : tab === 'audio' ? (
                     <AudioList
-                      items={items}
+                      items={courseItems}
                       categoryId={selectedCategory.id}
+                      course={selectedCourse}
                       currentTrack={player.currentTrack}
                       isPlaying={player.isPlaying}
                       onSelect={handleSelectAudio}
                     />
                   ) : (
                     <VideoGrid
-                      items={items}
+                      items={courseItems}
                       categoryId={selectedCategory.id}
+                      course={selectedCourse}
                       onSelect={handleOpenVideo}
                     />
                   )}
                 </>
               ) : (
                 <EmptyState
-                  title="No books"
+                  title="No series"
                   description="Add a folder in src/config/drive.js to get started."
                 />
               )}

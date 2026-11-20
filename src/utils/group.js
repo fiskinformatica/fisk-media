@@ -1,14 +1,19 @@
-export function groupMediaByFolder(items) {
+export function getCourseName(item) {
+  return item.path?.length > 1 ? item.path[0] : null
+}
+
+export function groupMediaByFolder(items, { pathOffset = 0 } = {}) {
   const groups = new Map()
 
   for (const item of items) {
-    const key = item.path.join(' / ')
+    const path = (item.path ?? []).slice(pathOffset)
+    const key = path.join(' / ')
     if (!groups.has(key)) {
       const isVideo =
         item.kind === 'video' || item.mimeType?.startsWith('video/')
       const name =
-        item.path.length > 0
-          ? item.path[item.path.length - 1]
+        path.length > 0
+          ? path[path.length - 1]
           : isVideo
             ? 'No Subtitles'
             : 'Files'
@@ -16,7 +21,7 @@ export function groupMediaByFolder(items) {
       groups.set(key, {
         key,
         name,
-        parent: item.path.length > 1 ? item.path.slice(0, -1).join(' / ') : '',
+        parent: path.length > 1 ? path.slice(0, -1).join(' / ') : '',
         items: [],
       })
     }

@@ -58,14 +58,19 @@ function VideoCard({ item, onSelect }) {
   )
 }
 
-export default function VideoGrid({ items, categoryId, onSelect }) {
+export default function VideoGrid({
+  items,
+  categoryId,
+  course = null,
+  onSelect,
+}) {
   const groups = useMemo(
     () =>
       sortGroupsByOrder(
-        groupMediaByFolder(items),
-        readFolderOrder('video', categoryId),
+        groupMediaByFolder(items, { pathOffset: course ? 1 : 0 }),
+        readFolderOrder('video', categoryId, course),
       ),
-    [items, categoryId],
+    [items, categoryId, course],
   )
 
   return (

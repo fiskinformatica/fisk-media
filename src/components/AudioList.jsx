@@ -25,6 +25,7 @@ function Equalizer() {
 export default function AudioList({
   items,
   categoryId,
+  course = null,
   currentTrack,
   isPlaying,
   onSelect,
@@ -32,10 +33,10 @@ export default function AudioList({
   const groups = useMemo(
     () =>
       sortGroupsByOrder(
-        groupMediaByFolder(items),
-        readFolderOrder('audio', categoryId),
+        groupMediaByFolder(items, { pathOffset: course ? 1 : 0 }),
+        readFolderOrder('audio', categoryId, course),
       ),
-    [items, categoryId],
+    [items, categoryId, course],
   )
 
   return (
