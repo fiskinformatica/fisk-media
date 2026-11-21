@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Play } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import FolderSection from './FolderSection.jsx'
 import { readFolderOrder, sortGroupsByOrder } from '../utils/folderOrder.js'
 import { fileExtension, formatBytes } from '../utils/format.js'
@@ -10,12 +11,19 @@ const collator = new Intl.Collator('en', {
   sensitivity: 'base',
 })
 
+const VARIANT_KEYS = {
+  Subtitle: 'subtitle',
+  'No Subtitle': 'noSubtitle',
+  Questions: 'questions',
+}
+
 export default function VideoGrid({
   items,
   categoryId,
   course = null,
   onSelect,
 }) {
+  const { t } = useTranslation()
   const groups = useMemo(
     () =>
       sortGroupsByOrder(
@@ -41,7 +49,7 @@ export default function VideoGrid({
               const detail =
                 [fileExtension(item.name), formatBytes(item.size)]
                   .filter(Boolean)
-                  .join(' · ') || 'Video'
+                  .join(' · ') || t('common.video')
 
               return (
                 <button
@@ -69,7 +77,9 @@ export default function VideoGrid({
 
                   {item.variant && (
                     <span className="shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
-                      {item.variant}
+                      {VARIANT_KEYS[item.variant]
+                        ? t(`common.${VARIANT_KEYS[item.variant]}`)
+                        : item.variant}
                     </span>
                   )}
                 </button>

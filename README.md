@@ -24,6 +24,9 @@ by Google Drive. No backend, database or extra services — just GitHub Pages.
 - Audio/video tabs and a book selector on mobile.
 - Clean, mobile-first red-and-white UI with Lucide icons. No on-screen logo —
   the wave mark appears only in the browser tab.
+- Dark and light themes with a toggle in the library and teacher's area.
+- English, Spanish and Portuguese translations with SVG flag selectors; English
+  is the default.
 
 ## Stack
 
@@ -117,13 +120,18 @@ The teacher's area is at:
 - `/teachers` (works in development; in production `404.html` redirects to the
   app).
 
-The login uses the same style as the student PIN screen and asks for
-`VITE_STAFF_PASSWORD`. It then shows today's PIN, its date, a copy button and a
-countdown to the next PIN. The page refreshes automatically at midnight, so the
-code and countdown never go stale.
+The teacher login has its own dark staff styling to set it apart from the
+student PIN screen. It asks for `VITE_STAFF_PASSWORD` and hides the digits while
+typing, so the PIN isn't readable from the classroom TV. It then shows today's
+PIN, its date, a copy button and a countdown to the next PIN. The page refreshes
+automatically at midnight, so the code and countdown never go stale.
 
 At the bottom is the **Admin** panel, which asks for the second PIN,
-`VITE_OWNER_PASSWORD`. Sync and folder order unlock only after that. Use
+`VITE_OWNER_PASSWORD` (also masked while typing). Sync, folder order and the
+teacher PIN reset unlock only after that. In **Teacher PIN**, the admin can set a
+new 4-digit code, confirm it and restore the configured one. Because this is a
+static site with no server, the new code is saved only in that browser's
+`localStorage`; every device that needs it must be updated separately. Use
 **Sign out** to lock the controls again.
 
 The library no longer links to the teacher's area; the access screen still does.
@@ -170,6 +178,9 @@ Folder sections start collapsed. Tap the folder header to expand or collapse.
 | --- | --- |
 | `media.library.v1` | Library cache + last sync time |
 | `media.access.v2` | Authorization state and validity period (no PIN) |
+| `media.staff-password.v1` | Local teacher PIN override set in Admin |
+| `media.theme.v1` | Selected theme (`dark` or `light`) |
+| `media.language.v1` | Selected language (`en`, `es` or `pt`) |
 | `media.player.v1` | Audio player volume |
 | `media.folderOrder.v2` | Folder order draft (cleared on publish) |
 

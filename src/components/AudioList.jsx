@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Play } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import FolderSection from './FolderSection.jsx'
 import { readFolderOrder, sortGroupsByOrder } from '../utils/folderOrder.js'
 import { fileExtension, formatBytes } from '../utils/format.js'
@@ -30,6 +31,7 @@ export default function AudioList({
   isPlaying,
   onSelect,
 }) {
+  const { t } = useTranslation()
   const groups = useMemo(
     () =>
       sortGroupsByOrder(
@@ -54,7 +56,7 @@ export default function AudioList({
               const detail =
                 [fileExtension(item.name), formatBytes(item.size)]
                   .filter(Boolean)
-                  .join(' · ') || 'Audio'
+                  .join(' · ') || t('common.audio')
 
               return (
                 <button
@@ -100,7 +102,7 @@ export default function AudioList({
 
                   {isActive && (
                     <span className="hidden shrink-0 animate-fade-in items-center gap-1.5 text-xs font-medium text-brand-600 sm:flex">
-                      {isPlaying ? 'Playing' : 'Paused'}
+                      {isPlaying ? t('common.playing') : t('common.paused')}
                     </span>
                   )}
                 </button>

@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { AlertCircle, ArrowUpRight, KeyRound, Lock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { PIN_LENGTH } from '../config/access.js'
-
-const MESSAGES = {
-  invalid: 'Enter the 4-digit PIN.',
-  incorrect: 'Wrong PIN. Ask your teacher.',
-  expired: 'This PIN expired. Ask for the current one.',
-}
+import LanguageSelect from './LanguageSelect.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 export default function PinGate({ onAuthorize, sessionExpired }) {
+  const { t } = useTranslation()
   const [pin, setPin] = useState('')
   const [error, setError] = useState(null)
 
@@ -28,10 +26,15 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
     }
   }
 
-  const message = error ? MESSAGES[error] : null
+  const message = error ? t(`pinGate.${error}`) : null
 
   return (
-    <main className="flex min-h-svh items-center justify-center px-4 py-10">
+    <main className="relative flex min-h-svh items-center justify-center px-4 py-10">
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        <LanguageSelect />
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-[22rem] animate-rise">
         <div className="card-elevated p-7 sm:p-8">
           <div className="mb-6 text-center">
@@ -39,22 +42,22 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
               <Lock className="h-5 w-5" aria-hidden="true" />
             </span>
             <h1 className="text-xl font-semibold tracking-tight text-stone-900">
-              Library access
+              {t('pinGate.title')}
             </h1>
             <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-              Enter the PIN from your teacher.
+              {t('pinGate.subtitle')}
             </p>
           </div>
 
           {sessionExpired && !message && (
             <div className="mb-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800">
-              Your session expired. Use today's PIN.
+              {t('pinGate.sessionExpired')}
             </div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
             <label htmlFor="pin" className="sr-only">
-              Access PIN
+              {t('pinGate.pinLabel')}
             </label>
             <input
               id="pin"
@@ -92,12 +95,12 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
               disabled={pin.length !== PIN_LENGTH}
               className="btn-primary mt-5 w-full"
             >
-              Sign in
+              {t('common.signIn')}
             </button>
           </form>
 
           <p className="mt-5 text-center text-xs leading-relaxed text-stone-400">
-            The PIN changes daily at midnight. <br /> Ask your teacher for a new one.
+            {t('pinGate.dailyNote')} <br /> {t('pinGate.askNote')}
           </p>
         </div>
 
@@ -110,10 +113,10 @@ export default function PinGate({ onAuthorize, sessionExpired }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs font-semibold text-stone-800">
-              Teacher's area
+              {t('pinGate.teacherTitle')}
             </span>
             <span className="block text-xs leading-snug text-stone-400">
-              Daily PIN and admin tools
+              {t('pinGate.teacherSubtitle')}
             </span>
           </span>
           <ArrowUpRight

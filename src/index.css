@@ -15,31 +15,72 @@
   --color-brand-700: #a80d27;
   --color-brand-800: #8a0b20;
   --color-brand-900: #730a1c;
+
+  --color-canvas: #fbfbfb;
+  --color-surface: #ffffff;
+  --color-surface-raised: #fafaf9;
+  --color-ink: #1c1917;
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-stone-50: #1c1917;
+  --color-stone-100: #292524;
+  --color-stone-200: #44403c;
+  --color-stone-300: #57534e;
+  --color-stone-400: #a8a29e;
+  --color-stone-500: #b6b1aa;
+  --color-stone-600: #d6d3d1;
+  --color-stone-700: #e7e5e4;
+  --color-stone-800: #f5f5f4;
+  --color-stone-900: #fafaf9;
+  --color-stone-950: #0c0a09;
+
+  --color-brand-50: #3b0d17;
+  --color-brand-100: #521020;
+  --color-brand-200: #7f1d2e;
+  --color-brand-300: #fb7185;
+  --color-brand-400: #f43f5e;
+  --color-brand-500: #f43f5e;
+  --color-brand-600: #e11d48;
+  --color-brand-700: #f43f5e;
+  --color-brand-800: #fb7185;
+  --color-brand-900: #fecdd3;
+
+  --color-canvas: #0c0a09;
+  --color-surface: #1c1917;
+  --color-surface-raised: #292524;
+  --color-ink: #fafaf9;
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-stone-200/80 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.03)] transition-shadow duration-200;
+    @apply rounded-2xl border border-stone-200/80 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.03)] transition-shadow duration-200;
   }
 
   .card-elevated {
-    @apply rounded-2xl border border-stone-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(28,25,23,0.35)];
+    @apply rounded-2xl border border-stone-200/80 bg-surface shadow-[0_18px_50px_-30px_rgba(28,25,23,0.35)];
   }
 
   .field-control {
-    @apply w-full min-w-0 max-w-full rounded-xl border border-stone-200 bg-stone-50/60 text-sm text-stone-900 transition placeholder:text-stone-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10;
+    @apply w-full min-w-0 max-w-full rounded-xl border border-stone-200 bg-surface-raised text-sm text-ink transition placeholder:text-stone-400 focus:border-brand-500 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/10;
   }
 
   .btn-primary {
-    @apply inline-flex h-auto min-h-11 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm leading-tight font-medium text-white transition duration-200 ease-out hover:bg-brand-700 hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35;
+    @apply inline-flex h-auto min-h-11 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm leading-tight font-medium text-white transition duration-200 ease-out hover:bg-brand-700 hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-35;
   }
 
   .btn-secondary {
-    @apply inline-flex h-auto min-h-9 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[13px] leading-tight font-medium text-stone-600 transition duration-200 ease-out hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
+    @apply inline-flex h-auto min-h-9 min-w-0 max-w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-surface px-3 py-2 text-[13px] leading-tight font-medium text-stone-600 transition duration-200 ease-out hover:border-stone-300 hover:bg-surface-raised hover:text-ink hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
   }
 
   .icon-button {
-    @apply grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-stone-200 bg-white text-stone-500 transition duration-200 ease-out hover:border-stone-300 hover:text-stone-800 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-stone-200 bg-surface text-stone-500 transition duration-200 ease-out hover:border-stone-300 hover:text-ink hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-wait disabled:opacity-60;
   }
 
   .link-muted {
@@ -75,8 +116,8 @@
   body {
     margin: 0;
     min-height: 100svh;
-    background-color: #fbfbfb;
-    color: #262626;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -105,7 +146,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    border: 3px solid #fbfbfb;
+    border: 3px solid var(--color-canvas);
     border-radius: 999px;
     background: #e5e5e5;
   }
@@ -117,15 +158,6 @@
   }
   to {
     opacity: 1;
-  }
-}
-
-@keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
   }
 }
 
@@ -151,50 +183,6 @@
   }
 }
 
-@keyframes sheet-down {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-}
-
-@keyframes sheet-up {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes menu-out {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-}
-
 @keyframes equalize {
   0%,
   100% {
@@ -211,26 +199,6 @@
 
 .animate-list-in {
   animation: list-in 180ms ease-out both;
-}
-
-.animate-fade-out {
-  animation: fade-out 180ms ease-in both;
-}
-
-.animate-sheet-down {
-  animation: sheet-down 180ms ease-in both;
-}
-
-.animate-sheet-up {
-  animation: sheet-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.animate-menu-in {
-  animation: menu-in 150ms ease-out both;
-}
-
-.animate-menu-out {
-  animation: menu-out 150ms ease-in both;
 }
 
 .animate-rise {
@@ -317,13 +285,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
-  .animate-fade-out,
   .animate-list-in,
-  .animate-menu-in,
-  .animate-menu-out,
   .animate-rise,
-  .animate-sheet-down,
-  .animate-sheet-up,
   .equalizer-bar {
     animation: none;
   }

@@ -2,26 +2,40 @@ import { useEffect, useState } from 'react'
 import {
   AlertCircle,
   Download,
+  KeyRound,
   Lock,
   LogOut,
   RefreshCw,
   ShieldCheck,
   TriangleAlert,
+  Undo2,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import ChangeNotice from './ChangeNotice.jsx'
 import FolderOrderPanel from './FolderOrderPanel.jsx'
 import SyncButton from './SyncButton.jsx'
 import { OWNER_PASSWORD, PIN_LENGTH } from '../config/access.js'
 import { useLibrary } from '../hooks/useLibrary.js'
+import {
+  clearStaffPassword,
+  hasCustomStaffPassword,
+  setStaffPassword,
+} from '../services/accessService.js'
 import { buildSnapshot, downloadSnapshot } from '../services/snapshotService.js'
 import { exportFolderOrders, resetLocalOrders } from '../utils/folderOrder.js'
 import { formatLastSync } from '../utils/format.js'
 
 export default function AdminPanel() {
+  const { t } = useTranslation()
   const [unlocked, setUnlocked] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState(null)
   const [published, setPublished] = useState(false)
+  const [customStaffPin, setCustomStaffPin] = useState(hasCustomStaffPassword)
+  const [newStaffPin, setNewStaffPin] = useState('')
+  const [confirmStaffPin, setConfirmStaffPin] = useState('')
+  const [staffError, setStaffError] = useState(null)
+  const [staffNotice, setStaffNotice] = useState(null)
 
   const {
     library,
@@ -41,17 +55,61 @@ export default function AdminPanel() {
     return () => window.clearTimeout(timeoutId)
   }, [changes, dismissChanges])
 
+  function cleanPin(value) {
+    return value.replace(/\D/g, '').slice(0, PIN_LENGTH)
+  }
+
   function handleChange(event) {
-    const nextPin = event.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
-    setPin(nextPin)
+    setPin(cleanPin(event.target.value))
     if (error) setError(null)
+  }
+
+  function handleStaffPinField(event, setter) {
+    setter(cleanPin(event.target.value))
+    setStaffError(null)
+    setStaffNotice(null)
+  }
+
+  function handleStaffPinSubmit(event) {
+    event.preventDefault()
+
+    if (
+      newStaffPin.length !== PIN_LENGTH ||
+      confirmStaffPin.length !== PIN_LENGTH
+    ) {
+      setStaffError(t('admin.pinRequired'))
+      setStaffNotice(null)
+      return
+    }
+
+    if (newStaffPin !== confirmStaffPin) {
+      setStaffError(t('admin.pinMismatch'))
+      setStaffNotice(null)
+      return
+    }
+
+    setStaffPassword(newStaffPin)
+    setCustomStaffPin(true)
+    setNewStaffPin('')
+    setConfirmStaffPin('')
+    setStaffError(null)
+    setStaffNotice(t('admin.updated'))
+  }
+
+  function handleStaffPinReset() {
+    clearStaffPassword()
+    setCustomStaffPin(false)
+    setNewStaffPin('')
+    setConfirmStaffPin('')
+    setStaffError(null)
+    setStaffNotice(t('admin.restored'))
   }
 
   function handleUnlock(event) {
     event.preventDefault()
 
     if (pin !== OWNER_PASSWORD) {
-      setError('Wrong PIN.')
+      setError(t('admin.wrongPin'))
       setPin('')
       return
     }
@@ -79,7 +137,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <section className="card-elevated animate-rise p-5 sm:p-6">
+    <section className="card-elevated animate-rise p-5 sm:p-6 lg:p-7">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -95,8 +153,8 @@ export default function AdminPanel() {
             </h2>
             <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
               {unlocked
-                ? 'Sync and folder order.'
-                : 'Restricted access.'}
+                ? t('admin.unlockedSubtitle')
+                : t('admin.lockedSubtitle')}
             </p>
           </div>
         </div>
@@ -105,25 +163,25 @@ export default function AdminPanel() {
           <button
             type="button"
             onClick={handleLock}
-            className="btn-secondary max-w-full shrink-0"
+            className="btn-secondary w-full max-w-full shrink-0 sm:w-36"
           >
             <LogOut className="cursor-pointer h-4 w-4 shrink-0" aria-hidden="true" />
-            Sign out
+            <span className="min-w-0 truncate">{t('common.signOut')}</span>
           </button>
         )}
       </div>
 
       {!unlocked ? (
-        <form onSubmit={handleUnlock} className="mt-4" noValidate>
+        <form onSubmit={handleUnlock} className="mt-4 max-w-sm" noValidate>
           <label htmlFor="owner-pin" className="sr-only">
-            Admin PIN
+            {t('admin.pinLabel')}
           </label>
           <input
             id="owner-pin"
             name="owner-pin"
-            type="text"
+            type="password"
             inputMode="numeric"
-            autoComplete="one-time-code"
+            autoComplete="off"
             pattern="[0-9]*"
             maxLength={PIN_LENGTH}
             value={pin}
@@ -153,27 +211,29 @@ export default function AdminPanel() {
             disabled={pin.length !== PIN_LENGTH}
             className="btn-primary mt-4 w-full"
           >
-            Unlock
+            {t('admin.unlock')}
           </button>
 
-          <p className="mt-3 text-center text-xs leading-relaxed text-stone-400">
-            Sync and folder order are for the admin only.
+          <p className="mt-3 max-w-sm text-xs leading-relaxed text-stone-400">
+            {t('admin.lockedNote')}
           </p>
         </form>
       ) : (
-        <div className="mt-5 space-y-5">
+        <div className="mt-5 space-y-5 xl:grid xl:grid-cols-2 xl:items-start xl:gap-5 xl:space-y-0">
           {changes && (
-            <ChangeNotice changes={changes} onDismiss={dismissChanges} />
+            <div className="xl:col-span-2">
+              <ChangeNotice changes={changes} onDismiss={dismissChanges} />
+            </div>
           )}
 
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
                 <h3 className="text-base font-semibold tracking-tight text-stone-900">
-                  Sync
+                  {t('admin.syncTitle')}
                 </h3>
                 <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
-                  Refresh the library shown to students.
+                  {t('admin.syncDesc')}
                 </p>
               </div>
               <SyncButton
@@ -191,7 +251,7 @@ export default function AdminPanel() {
                 aria-hidden="true"
               />
               <span className="min-w-0 break-words">
-                {isSyncing ? 'Syncing…' : formatLastSync(syncedAt)}
+                {isSyncing ? t('admin.syncing') : formatLastSync(syncedAt)}
               </span>
             </div>
 
@@ -199,22 +259,24 @@ export default function AdminPanel() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-stone-700">
-                    Publish to students
+                    {t('admin.publishTitle')}
                   </p>
                   <p className="mt-0.5 text-xs leading-relaxed break-words text-stone-400">
                     {published
-                      ? 'Replace public/library.json with the downloaded file and deploy.'
-                      : 'Download the library and folder order as a static file.'}
+                      ? t('admin.publishedDesc')
+                      : t('admin.publishDesc')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handlePublish}
                   disabled={!library}
-                  className="btn-secondary min-h-9 max-w-full shrink-0 py-2 text-xs"
+                  className="btn-secondary min-h-9 w-full max-w-full shrink-0 py-2 text-xs sm:w-48"
                 >
                   <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Download snapshot
+                  <span className="min-w-0 truncate">
+                    {t('admin.downloadSnapshot')}
+                  </span>
                 </button>
               </div>
             </div>
@@ -226,19 +288,144 @@ export default function AdminPanel() {
                   aria-hidden="true"
                 />
                 <span>
-                  API key missing. Set <code>VITE_GOOGLE_API_KEY</code> to sync.
+                  {t('admin.apiKey')}
                 </span>
               </div>
             )}
 
             {syncError && (
               <p className="mt-3 rounded-xl border border-red-200/70 bg-red-50 px-3.5 py-3 text-xs leading-relaxed text-red-700">
-                {syncError.message || "Couldn't sync the library right now."}
+                {syncError.message || t('admin.syncFailed')}
               </p>
             )}
           </div>
 
-          <div className="border-t border-stone-100 pt-5">
+          <div className="border-t border-stone-100 pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600">
+                  <KeyRound className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold tracking-tight text-stone-900">
+                    {t('admin.teacherPinTitle')}
+                  </h3>
+                  <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
+                    {t('admin.teacherPinDesc')}
+                  </p>
+                </div>
+              </div>
+
+              <span
+                className={`flex w-40 shrink-0 items-center justify-center overflow-hidden rounded-full px-2.5 py-1 text-center text-[11px] font-medium whitespace-nowrap sm:w-44 ${
+                  customStaffPin
+                    ? 'bg-brand-50 text-brand-700'
+                    : 'bg-stone-100 text-stone-500'
+                }`}
+              >
+                {customStaffPin
+                  ? t('admin.customPin')
+                  : t('admin.configuredPin')}
+              </span>
+            </div>
+
+            <form onSubmit={handleStaffPinSubmit} className="mt-4 space-y-3" noValidate>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="new-staff-pin" className="eyebrow mb-1.5 block">
+                    {t('admin.newPin')}
+                  </label>
+                  <input
+                    id="new-staff-pin"
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={newStaffPin}
+                    onChange={(event) =>
+                      handleStaffPinField(event, setNewStaffPin)
+                    }
+                    placeholder="••••"
+                    className="field-control h-12 px-2 pl-[0.4em] text-center text-lg font-semibold tracking-[0.35em]"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="confirm-staff-pin"
+                    className="eyebrow mb-1.5 block"
+                  >
+                    {t('admin.confirmPin')}
+                  </label>
+                  <input
+                    id="confirm-staff-pin"
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={confirmStaffPin}
+                    onChange={(event) =>
+                      handleStaffPinField(event, setConfirmStaffPin)
+                    }
+                    placeholder="••••"
+                    className="field-control h-12 px-2 pl-[0.4em] text-center text-lg font-semibold tracking-[0.35em]"
+                  />
+                </div>
+              </div>
+
+              {staffError && (
+                <p
+                  role="alert"
+                  className="flex items-start gap-1.5 text-xs leading-relaxed text-red-600"
+                >
+                  <AlertCircle
+                    className="mt-px h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {staffError}
+                </p>
+              )}
+
+              {staffNotice && (
+                <p className="text-xs leading-relaxed text-brand-700">
+                  {staffNotice}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={
+                    newStaffPin.length !== PIN_LENGTH ||
+                    confirmStaffPin.length !== PIN_LENGTH
+                  }
+                  className="btn-primary min-h-9 w-full py-2 text-xs sm:w-40"
+                >
+                  <span className="min-w-0 truncate">{t('admin.updatePin')}</span>
+                </button>
+
+                {customStaffPin && (
+                  <button
+                    type="button"
+                    onClick={handleStaffPinReset}
+                    className="btn-secondary min-h-9 w-full py-2 text-xs sm:w-60"
+                  >
+                    <Undo2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="min-w-0 truncate">
+                      {t('admin.restoreDefault')}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <p className="text-xs leading-relaxed text-stone-400">
+                {t('admin.savedLocal')}
+              </p>
+            </form>
+          </div>
+
+          <div className="border-t border-stone-100 pt-5 xl:col-span-2">
             <FolderOrderPanel library={library} />
           </div>
         </div>

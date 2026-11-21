@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { LogOut } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import AudioList from './AudioList.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import CategorySidebar from './CategorySidebar.jsx'
@@ -10,7 +11,9 @@ import {
   LoadingState,
   SetupState,
 } from './LibraryStates.jsx'
+import LanguageSelect from './LanguageSelect.jsx'
 import MediaTabs from './MediaTabs.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 import VideoGrid from './VideoGrid.jsx'
 import VideoModal from './VideoModal.jsx'
 import { useAudioPlayer } from '../hooks/useAudioPlayer.js'
@@ -18,6 +21,7 @@ import { useLibrary } from '../hooks/useLibrary.js'
 import { getCourseName } from '../utils/group.js'
 
 export default function LibraryBrowser({ onLock }) {
+  const { t } = useTranslation()
   const { library, error, hasData, apiConfigured, refresh } = useLibrary()
   const player = useAudioPlayer()
 
@@ -96,16 +100,21 @@ export default function LibraryBrowser({ onLock }) {
 
   return (
     <div className="min-h-svh pb-32">
-      <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#fbfbfb]/85 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-end px-4 sm:px-6">
-          <nav aria-label="Account">
+          <nav aria-label={t('common.account')} className="flex items-center gap-2">
+            <LanguageSelect />
+            <ThemeToggle />
+
             <button
               type="button"
               onClick={onLock}
-              className="btn-secondary min-h-10 px-2 py-2 sm:px-3"
+              className="btn-secondary min-h-10 w-32 px-2 py-2 sm:w-36 sm:px-3"
             >
               <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="cursor-pointer text-xs">Sign out</span>
+              <span className="min-w-0 cursor-pointer truncate text-xs">
+                {t('common.signOut')}
+              </span>
             </button>
           </nav>
         </div>
@@ -114,7 +123,7 @@ export default function LibraryBrowser({ onLock }) {
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-7 sm:px-6 sm:pt-9">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-[28px]">
-            Library
+            {t('common.library')}
           </h1>
 
           <MediaTabs
@@ -156,8 +165,7 @@ export default function LibraryBrowser({ onLock }) {
                       {selectedCourse ?? selectedCategory.name}
                     </h2>
                     <p className="mt-0.5 text-xs text-stone-400">
-                      {courseItems.length}{' '}
-                      {courseItems.length === 1 ? 'file' : 'files'}
+                      {t('common.file', { count: courseItems.length })}
                     </p>
                   </div>
 
@@ -165,11 +173,11 @@ export default function LibraryBrowser({ onLock }) {
 
                   {courseItems.length === 0 ? (
                     <EmptyState
-                      description={
-                        tab === 'audio'
-                          ? 'No audio files here yet.'
-                          : 'No videos here yet.'
-                      }
+                        description={
+                          tab === 'audio'
+                            ? t('states.noAudio')
+                            : t('states.noVideo')
+                        }
                     />
                   ) : tab === 'audio' ? (
                     <AudioList
@@ -190,10 +198,10 @@ export default function LibraryBrowser({ onLock }) {
                   )}
                 </div>
               ) : (
-                <EmptyState
-                  title="No series"
-                  description="Add a folder in src/config/drive.js to get started."
-                />
+                  <EmptyState
+                    title={t('states.noSeries')}
+                    description={t('states.addFolder')}
+                  />
               )}
             </section>
           </div>

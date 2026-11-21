@@ -7,6 +7,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { formatDuration } from '../utils/format.js'
 
 function progressPercent(current, total) {
@@ -32,6 +33,7 @@ export default function AudioPlayer({
   setVolume,
   toggleMute,
 }) {
+  const { t } = useTranslation()
   const percent = progressPercent(currentTime, duration)
   const location = currentTrack.path.length
     ? `${currentTrack.categoryName} · ${currentTrack.path.join(' / ')}`
@@ -39,7 +41,7 @@ export default function AudioPlayer({
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] sm:px-4 sm:pb-4">
-      <div className="mx-auto w-full border-t border-stone-200/80 bg-white/95 shadow-[0_-10px_40px_-24px_rgba(28,25,23,0.35)] backdrop-blur-md sm:max-w-5xl sm:rounded-2xl sm:border sm:shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)]">
+      <div className="mx-auto w-full border-t border-stone-200/80 bg-surface/95 shadow-[0_-10px_40px_-24px_rgba(28,25,23,0.35)] backdrop-blur-md sm:max-w-5xl sm:rounded-2xl sm:border sm:shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)]">
         <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-4 sm:px-5">
           <div className="min-w-0 flex-1 sm:w-56 sm:flex-none lg:w-64">
             <p className="text-sm leading-tight font-semibold text-stone-900 line-clamp-2 break-words">
@@ -53,7 +55,7 @@ export default function AudioPlayer({
               type="button"
               onClick={previous}
               disabled={!hasPrevious}
-              aria-label="Previous track"
+              aria-label={t('player.previous')}
               className="grid h-8 w-8 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <SkipBack className="h-4 w-4" fill="currentColor" />
@@ -62,7 +64,13 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggle}
-              aria-label={isBuffering ? 'Buffering' : isPlaying ? 'Pause' : 'Play'}
+              aria-label={
+                isBuffering
+                  ? t('player.buffering')
+                  : isPlaying
+                    ? t('player.pause')
+                    : t('player.play')
+              }
               className="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             >
               {isBuffering ? (
@@ -78,7 +86,7 @@ export default function AudioPlayer({
               type="button"
               onClick={next}
               disabled={!hasNext}
-              aria-label="Next track"
+              aria-label={t('player.next')}
               className="grid h-8 w-8 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <SkipForward className="h-4 w-4" fill="currentColor" />
@@ -97,7 +105,7 @@ export default function AudioPlayer({
               value={Math.min(currentTime, duration || 0)}
               onChange={(event) => seek(Number(event.target.value))}
               disabled={!duration}
-              aria-label="Seek audio"
+              aria-label={t('player.seek')}
               className="player-range min-w-0 flex-1"
               style={{ '--progress': `${percent}%` }}
             />
@@ -110,7 +118,7 @@ export default function AudioPlayer({
             <button
               type="button"
               onClick={toggleMute}
-              aria-label={muted ? 'Unmute' : 'Mute'}
+              aria-label={muted ? t('player.unmute') : t('player.mute')}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800"
             >
               {muted || volume === 0 ? (
@@ -126,7 +134,7 @@ export default function AudioPlayer({
               step="0.01"
               value={muted ? 0 : volume}
               onChange={(event) => setVolume(Number(event.target.value))}
-              aria-label="Volume"
+              aria-label={t('player.volume')}
               className="player-range w-16"
               style={{ '--progress': `${(muted ? 0 : volume) * 100}%` }}
             />
@@ -135,7 +143,7 @@ export default function AudioPlayer({
           <button
             type="button"
             onClick={toggleMute}
-            aria-label={muted ? 'Ativar som' : 'Silenciar'}
+            aria-label={muted ? t('player.unmute') : t('player.mute')}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 md:hidden"
           >
             {muted || volume === 0 ? (
@@ -158,7 +166,7 @@ export default function AudioPlayer({
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seek(Number(event.target.value))}
             disabled={!duration}
-            aria-label="Seek audio"
+            aria-label={t('player.seek')}
             className="player-range min-w-0 flex-1"
             style={{ '--progress': `${percent}%` }}
           />

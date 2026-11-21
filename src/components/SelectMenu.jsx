@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, Search, SearchX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 function normalize(text) {
   return String(text ?? '')
@@ -14,19 +15,17 @@ export default function SelectMenu({
   value,
   options,
   onChange,
-  placeholder = 'Selecione',
+  placeholder,
   disabled = false,
   className = '',
   menuClassName = '',
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [closing, setClosing] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
-  const closeTimerRef = useRef(null)
   const rootRef = useRef(null)
   const triggerRef = useRef(null)
-  const searchRef = useRef(null)
   const listRef = useRef(null)
   const listId = useId()
 
@@ -39,27 +38,10 @@ export default function SelectMenu({
   }, [options, query])
 
   const closeMenu = useCallback(() => {
-    if (!open || closing) return
-    setClosing(true)
-    triggerRef.current?.focus()
-    closeTimerRef.current = window.setTimeout(() => {
-      setOpen(false)
-      setClosing(false)
-      closeTimerRef.current = null
-    }, 180)
-  }, [open, closing])
-
-  useEffect(() => {
     if (!open) return
-    searchRef.current?.focus()
+    setOpen(false)
+    triggerRef.current?.focus()
   }, [open])
-
-  useEffect(
-    () => () => {
-      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current)
-    },
-    [],
-  )
 
   useEffect(() => {
     if (!open) return
@@ -78,7 +60,7 @@ export default function SelectMenu({
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [open, closing, closeMenu])
+  }, [open, closeMenu])
 
   useEffect(() => {
     if (!open || !window.matchMedia('(max-width: 639px)').matches) return
@@ -96,13 +78,8 @@ export default function SelectMenu({
       ?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex, open, query])
 
-  function openWith(nextQuery = '') {
-    if (closeTimerRef.current) {
-      window.clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
-    }
-    setClosing(false)
-    setQuery(nextQuery)
+  function openMenu() {
+    setQuery('')
     setActiveIndex(0)
     setOpen(true)
   }
@@ -112,7 +89,7 @@ export default function SelectMenu({
       closeMenu()
       return
     }
-    openWith('')
+    openMenu()
   }
 
   function handleTriggerKeyDown(event) {
@@ -120,13 +97,7 @@ export default function SelectMenu({
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
-      if (!open) openWith('')
-      return
-    }
-
-    if (event.key.length === 1 && !open) {
-      event.preventDefault()
-      openWith(event.key)
+      if (!open) openMenu()
     }
   }
 
@@ -157,6 +128,11 @@ export default function SelectMenu({
     }
   }
 
+  function handleSearchFocus(event) {
+    const length = event.target.value.length
+    event.target.setSelectionRange(length, length)
+  }
+
   return (
     <div ref={rootRef} className="relative min-w-0">
       <button
@@ -168,17 +144,17 @@ export default function SelectMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
-        className={`flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition duration-200 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-not-allowed disabled:opacity-50 sm:active:scale-100 lg:min-h-[4.5rem] lg:px-4 ${className} ${
+        className={`flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 disabled:cursor-not-allowed disabled:opacity-50 lg:min-h-[4.5rem] lg:px-4 ${className} ${
           open
-            ? 'border-brand-400 bg-white shadow-[0_8px_24px_-18px_rgba(28,25,23,0.5)] ring-4 ring-brand-500/10'
-            : 'border-stone-200 bg-stone-50/60 hover:border-brand-200 hover:bg-white'
+            ? 'border-brand-400 bg-surface shadow-[0_8px_24px_-18px_rgba(28,25,23,0.5)] ring-4 ring-brand-500/10'
+            : 'border-stone-200 bg-stone-50/60 hover:border-brand-200 hover:bg-surface'
         }`}
       >
         <span
-          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition duration-200 lg:h-11 lg:w-11 ${
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl lg:h-11 lg:w-11 ${
             open
               ? 'bg-brand-600 text-white'
-              : 'bg-white text-brand-600 shadow-sm ring-1 ring-stone-200/80'
+              : 'bg-surface text-brand-600 shadow-sm ring-1 ring-stone-200/80'
           }`}
         >
           <Icon className="h-[18px] w-[18px] lg:h-5 lg:w-5" aria-hidden="true" />
@@ -192,7 +168,7 @@ export default function SelectMenu({
               selected ? 'font-semibold text-stone-900' : 'text-stone-400'
             }`}
           >
-            {selected?.label ?? placeholder}
+            {selected?.label ?? placeholder ?? t('select.chooseBook')}
           </span>
         </span>
         {selected && (
@@ -201,7 +177,7 @@ export default function SelectMenu({
           </span>
         )}
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 lg:h-5 lg:w-5 ${
+          className={`h-4 w-4 shrink-0 text-stone-400 lg:h-5 lg:w-5 ${
             open ? 'rotate-180' : ''
           }`}
           aria-hidden="true"
@@ -211,9 +187,7 @@ export default function SelectMenu({
       {open && (
         <>
           <div
-            className={`fixed inset-0 z-40 bg-stone-950/25 backdrop-blur-[2px] sm:hidden ${
-              closing ? 'animate-fade-out' : 'animate-fade-in'
-            }`}
+            className="fixed inset-0 z-40 bg-stone-950/25 backdrop-blur-[2px] sm:hidden"
             aria-hidden="true"
             onClick={closeMenu}
           />
@@ -221,11 +195,7 @@ export default function SelectMenu({
           <div
             role="dialog"
             aria-label={label}
-            className={`fixed inset-x-0 bottom-0 z-50 max-h-[85svh] rounded-t-3xl border border-stone-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-18px_50px_-25px_rgba(28,25,23,0.35)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+8px)] sm:max-h-72 sm:w-80 sm:rounded-2xl sm:p-2 sm:pb-2 sm:shadow-[0_18px_50px_-25px_rgba(28,25,23,0.35)] ${
-              closing
-                ? 'animate-sheet-down sm:animate-menu-out'
-                : 'animate-sheet-up sm:animate-menu-in'
-            } ${menuClassName}`}
+            className={`fixed inset-x-0 bottom-0 z-50 max-h-[85svh] rounded-t-3xl border border-stone-200 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-18px_50px_-25px_rgba(28,25,23,0.35)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+8px)] sm:max-h-72 sm:w-80 sm:rounded-2xl sm:p-2 sm:pb-2 sm:shadow-[0_18px_50px_-25px_rgba(28,25,23,0.35)] ${menuClassName}`}
           >
             <div
               className="mx-auto mb-2 h-1 w-10 rounded-full bg-stone-200 sm:hidden"
@@ -238,13 +208,13 @@ export default function SelectMenu({
                 aria-hidden="true"
               />
               <input
-                ref={searchRef}
                 type="text"
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setActiveIndex(0)
                 }}
+                onFocus={handleSearchFocus}
                 onKeyDown={handleSearchKeyDown}
                 role="combobox"
                 aria-expanded="true"
@@ -254,8 +224,8 @@ export default function SelectMenu({
                     ? `${listId}-${activeIndex}`
                     : undefined
                 }
-                aria-label={`Search ${label}`}
-                placeholder={`Search ${label.toLowerCase()}...`}
+                aria-label={t('select.search', { label })}
+                placeholder={t('select.search', { label })}
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
@@ -282,7 +252,7 @@ export default function SelectMenu({
                     aria-selected={isSelected}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => choose(option)}
-                    className={`flex min-h-14 cursor-pointer items-center gap-2.5 rounded-xl px-3 transition duration-150 active:bg-brand-100 sm:min-h-11 ${
+                    className={`flex min-h-14 cursor-pointer items-center gap-2.5 rounded-xl px-3 active:bg-brand-100 sm:min-h-11 ${
                       index === activeIndex ? 'bg-brand-50' : ''
                     }`}
                   >
@@ -290,7 +260,7 @@ export default function SelectMenu({
                       className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
                         isSelected
                           ? 'border-brand-600 bg-brand-600 text-white'
-                          : 'border-stone-300 bg-white'
+                          : 'border-stone-300 bg-surface'
                       }`}
                     >
                       {isSelected && (
@@ -311,7 +281,7 @@ export default function SelectMenu({
                       {option.label}
                     </span>
                     {option.count != null && (
-                      <span className="shrink-0 rounded-md bg-white/80 px-1.5 py-0.5 text-[11px] tabular-nums text-stone-500">
+                      <span className="shrink-0 rounded-md bg-surface/80 px-1.5 py-0.5 text-[11px] tabular-nums text-stone-500">
                         {option.count}
                       </span>
                     )}
@@ -323,14 +293,14 @@ export default function SelectMenu({
                 <li className="flex flex-col items-center gap-2 px-3 py-8 text-center">
                   <SearchX className="h-6 w-6 text-stone-300" aria-hidden="true" />
                   <span className="text-sm text-stone-500">
-                    No results found
+                    {t('select.noResults')}
                   </span>
                 </li>
               )}
             </ul>
 
             <p className="hidden px-2 pt-1 text-[11px] leading-none text-stone-400 sm:block">
-              Type to filter · Arrow keys navigate · Enter selects
+              {t('select.hint')}
             </p>
           </div>
         </>

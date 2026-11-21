@@ -1,9 +1,25 @@
-import { ACCESS_STORAGE_KEY, PIN_LENGTH, SECRET_SALT } from '../config/access.js'
+import {
+  ACCESS_STORAGE_KEY,
+  PIN_LENGTH,
+  SECRET_SALT,
+  STAFF_PASSWORD,
+} from '../config/access.js'
 import { readJson, removeStorage, writeJson } from '../utils/storage.js'
 import { formatDayLabel } from '../utils/format.js'
 
 const MS_PER_DAY = 86_400_000
 const PIN_STEP = 7
+const STAFF_PASSWORD_STORAGE_KEY = 'media.staff-password.v1'
+
+function normalizePin(input) {
+  return String(input ?? '')
+    .replace(/\D/g, '')
+    .slice(0, PIN_LENGTH)
+}
+
+function isPin(value) {
+  return value.length === PIN_LENGTH
+}
 
 function dayKeyOf(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -50,11 +66,9 @@ export function generateDailyPin(date = new Date()) {
  * @returns {{ ok: boolean, reason: 'ok'|'incorrect'|'expired'|'invalid', periodKey?: string }}
  */
 export function validatePin(input, date = new Date()) {
-  const pin = String(input ?? '')
-    .replace(/\D/g, '')
-    .slice(0, PIN_LENGTH)
+  const pin = normalizePin(input)
 
-  if (pin.length !== PIN_LENGTH) {
+  if (!isPin(pin)) {
     return { ok: false, reason: 'invalid' }
   }
 
@@ -87,6 +101,33 @@ export function saveAuthorization(authorization) {
 
 export function clearAuthorization() {
   removeStorage(ACCESS_STORAGE_KEY)
+}
+
+/**
+ * The admin can override the teacher PIN locally. A static site has no server,
+ * so the override lives in this browser and falls back to the build-time value.
+ */
+export function getStaffPassword() {
+  const stored = readJson(STAFF_PASSWORD_STORAGE_KEY)
+  const pin = normalizePin(stored?.pin)
+  return stored?.v === 1 && isPin(pin) ? pin : STAFF_PASSWORD
+}
+
+export function hasCustomStaffPassword() {
+  const stored = readJson(STAFF_PASSWORD_STORAGE_KEY)
+  return stored?.v === 1 && isPin(normalizePin(stored.pin))
+}
+
+export function setStaffPassword(input) {
+  const pin = normalizePin(input)
+  if (!isPin(pin)) return false
+
+  writeJson(STAFF_PASSWORD_STORAGE_KEY, { v: 1, pin })
+  return true
+}
+
+export function clearStaffPassword() {
+  removeStorage(STAFF_PASSWORD_STORAGE_KEY)
 }
 
 export function readAuthorization() {

@@ -29,7 +29,7 @@ export async function fetchSnapshot({ signal } = {}) {
 
     const library = normalizeLibrary(snapshot.library)
     const errors = (library.errors ?? []).filter(
-      (entry) => entry?.code !== 'NETWORK',
+      (entry) => entry?.code !== 'retry',
     )
     return { ...snapshot, library: { ...library, errors } }
   } catch {

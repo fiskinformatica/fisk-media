@@ -223,6 +223,13 @@ function describeError(error, categoryName) {
   return error.message || "Couldn't reach Google Drive."
 }
 
+function errorCode(error) {
+  if (error.status === 403) return 'noAccess'
+  if (error.status === 404) return 'notFound'
+  if (!error.status) return 'retry'
+  return 'unreachable'
+}
+
 function compareMedia(a, b) {
   const pathA = a.path.join('\u0000')
   const pathB = b.path.join('\u0000')
@@ -247,7 +254,7 @@ async function collectCategory(root, kind, { limit, signal, errors, onScan }) {
         category: root.name,
         path: path.join(' / ') || root.name,
         message: describeError(error, root.name),
-        code: error.status ? undefined : 'NETWORK',
+        code: errorCode(error),
       })
       return
     }

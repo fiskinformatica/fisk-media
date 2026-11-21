@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   getDirectMediaUrl,
   getDrivePreviewUrl,
@@ -9,6 +10,7 @@ import {
 } from '../services/driveService.js'
 
 export default function VideoModal({ item, onClose }) {
+  const { t } = useTranslation()
   const sources = useMemo(
     () =>
       item.id
@@ -77,9 +79,9 @@ export default function VideoModal({ item, onClose }) {
             href={getDriveViewUrl(item.id)}
             target="_blank"
             rel="noreferrer"
-            className="hidden shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10 hover:text-white sm:flex"
+            className="hidden w-36 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white/60 transition hover:bg-white/10 hover:text-white sm:flex"
           >
-            Open in Drive
+            <span className="min-w-0 truncate">{t('video.openInDrive')}</span>
             <ExternalLink
               className="h-3.5 w-3.5 shrink-0"
               aria-hidden="true"
@@ -89,7 +91,7 @@ export default function VideoModal({ item, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close video"
+            aria-label={t('video.close')}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -108,7 +110,7 @@ export default function VideoModal({ item, onClose }) {
               />
             ) : (
               <div className="grid h-[70svh] place-items-center px-6 text-center text-sm text-white/60">
-                This video is unavailable.
+                {t('video.unavailable')}
               </div>
             )
           ) : (
@@ -133,13 +135,13 @@ export default function VideoModal({ item, onClose }) {
             rel="noreferrer"
             className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-white/60"
           >
-            Open in Drive
+            {t('video.openInDrive')}
             <ExternalLink
               className="h-3.5 w-3.5 shrink-0"
               aria-hidden="true"
             />
           </a>
-          <span className="text-xs text-white/45">Use the player controls</span>
+          <span className="text-xs text-white/45">{t('video.controlsHint')}</span>
         </div>
       </div>
     </div>

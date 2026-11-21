@@ -29,7 +29,7 @@ export default function FolderSection({ name, parent, count, children }) {
           )}
         </span>
 
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70 transition-colors duration-200 group-hover:text-brand-600">
+        <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium tabular-nums text-stone-400 ring-1 ring-stone-200/70 transition-colors duration-200 group-hover:text-brand-600">
           {count}
         </span>
 

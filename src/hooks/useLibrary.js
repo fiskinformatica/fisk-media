@@ -20,7 +20,7 @@ function readCache() {
   }
   const library = normalizeLibrary(cache.library)
   const errors = (library.errors ?? []).filter(
-    (entry) => entry?.code !== 'NETWORK',
+    (entry) => entry?.code !== 'retry',
   )
   return { ...cache, library: { ...library, errors } }
 }

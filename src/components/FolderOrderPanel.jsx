@@ -7,6 +7,7 @@ import {
   GripVertical,
   RotateCcw,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import MediaTabs from './MediaTabs.jsx'
 import {
   clearFolderOrder,
@@ -17,6 +18,7 @@ import {
 import { getCourseName, groupMediaByFolder } from '../utils/group.js'
 
 export default function FolderOrderPanel({ library }) {
+  const { t } = useTranslation()
   const [kind, setKind] = useState('audio')
   const [categoryId, setCategoryId] = useState('')
   const [selectedCourseName, setSelectedCourseName] = useState(null)
@@ -216,7 +218,7 @@ export default function FolderOrderPanel({ library }) {
         key={group.key || 'root'}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 transition ${
+        className={`flex items-center gap-2.5 rounded-xl border bg-surface px-3 py-2.5 transition ${
           isDragging ? 'opacity-40' : ''
         } ${
           isDropTarget ? 'border-brand-300 ring-2 ring-brand-100' : 'border-stone-200'
@@ -232,7 +234,7 @@ export default function FolderOrderPanel({ library }) {
           </p>
           <p className="text-xs leading-snug break-words text-stone-400 line-clamp-2">
             {group.parent ? `${group.parent} · ` : ''}
-            {count} {count === 1 ? 'file' : 'files'}
+            {t('common.file', { count })}
           </p>
         </div>
 
@@ -240,7 +242,7 @@ export default function FolderOrderPanel({ library }) {
           <span
             draggable
             role="img"
-            aria-label={`Drag to reorder ${group.name}`}
+            aria-label={t('folderOrder.drag', { name: group.name })}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             className="grid h-8 w-6 shrink-0 cursor-grab place-items-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 active:cursor-grabbing"
@@ -251,7 +253,7 @@ export default function FolderOrderPanel({ library }) {
             type="button"
             onClick={() => onMove(index, -1)}
             disabled={index === 0}
-            aria-label={`Move ${group.name} up`}
+            aria-label={t('folderOrder.moveUp', { name: group.name })}
             className="icon-button h-8 w-8 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -260,7 +262,7 @@ export default function FolderOrderPanel({ library }) {
             type="button"
             onClick={() => onMove(index, 1)}
             disabled={index === groups.length - 1}
-            aria-label={`Move ${group.name} down`}
+            aria-label={t('folderOrder.moveDown', { name: group.name })}
             className="icon-button h-8 w-8 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -278,21 +280,21 @@ export default function FolderOrderPanel({ library }) {
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold tracking-tight text-stone-900">
-            Folder order
+            {t('folderOrder.title')}
           </h3>
           <p className="mt-0.5 text-sm leading-relaxed text-stone-500">
-            Drag to reorder, or use the arrows.
+            {t('folderOrder.desc')}
           </p>
         </div>
       </div>
 
       {!library ? (
         <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-          Sync the library to load folders.
+          {t('folderOrder.syncToLoad')}
         </p>
       ) : categories.length === 0 ? (
         <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-          No folders for this media type.
+          {t('folderOrder.noFolders')}
         </p>
       ) : (
         <>
@@ -309,7 +311,7 @@ export default function FolderOrderPanel({ library }) {
             <select
               value={activeCategory?.id ?? ''}
               onChange={(event) => handleCategoryChange(event.target.value)}
-              aria-label="Series"
+              aria-label={t('common.series')}
               className="field-control h-10 min-w-0 px-3 text-sm sm:w-56"
             >
               {categories.map((category) => (
@@ -322,7 +324,7 @@ export default function FolderOrderPanel({ library }) {
 
           {courses.length > 0 && (
             <label className="mt-2 block sm:ml-auto sm:w-56">
-              <span className="sr-only">Course</span>
+              <span className="sr-only">{t('common.course')}</span>
               <select
                 value={activeCourse ?? ''}
                 onChange={(event) => {
@@ -330,7 +332,7 @@ export default function FolderOrderPanel({ library }) {
                   setDrag(null)
                   setDropTarget(null)
                 }}
-                aria-label="Course"
+                aria-label={t('common.course')}
                 className="field-control h-10 w-full px-3 text-sm"
               >
                 {courses.map((course) => (
@@ -344,7 +346,7 @@ export default function FolderOrderPanel({ library }) {
 
           {orderedCourseGroups.length > 0 && (
             <div className="mt-5">
-              <p className="eyebrow mb-2">Course order</p>
+              <p className="eyebrow mb-2">{t('folderOrder.courseOrder')}</p>
               <ul className="space-y-2">
                 {orderedCourseGroups.map((group, index) =>
                   renderGroup(
@@ -362,11 +364,11 @@ export default function FolderOrderPanel({ library }) {
 
           {orderedLessonGroups.length === 0 ? (
             <p className="mt-4 rounded-xl bg-stone-50 px-3.5 py-3 text-xs leading-relaxed text-stone-500">
-              No subfolders to arrange.
+              {t('folderOrder.noSubfolders')}
             </p>
           ) : (
             <div className="mt-5">
-              <p className="eyebrow mb-2">Lesson order</p>
+              <p className="eyebrow mb-2">{t('folderOrder.lessonOrder')}</p>
               <ul className="space-y-2">
                 {orderedLessonGroups.map((group, index) =>
                   renderGroup(
@@ -384,15 +386,15 @@ export default function FolderOrderPanel({ library }) {
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-relaxed break-words text-stone-400">
-              Saved in this browser.
+              {t('folderOrder.savedLocal')}
             </p>
             <button
               type="button"
               onClick={resetOrder}
-              className="btn-secondary min-h-9 py-2 text-xs sm:text-sm"
+              className="btn-secondary min-h-9 w-full py-2 text-xs sm:w-28 sm:text-sm"
             >
               <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Reset
+              <span className="min-w-0 truncate">{t('common.reset')}</span>
             </button>
           </div>
         </>

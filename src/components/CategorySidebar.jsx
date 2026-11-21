@@ -1,4 +1,5 @@
 import { BookOpen, Film, Headphones } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import SelectMenu from './SelectMenu.jsx'
 
 export default function CategorySidebar({
@@ -10,6 +11,7 @@ export default function CategorySidebar({
   onSelectCourse,
   kind,
 }) {
+  const { t } = useTranslation()
   const SeriesIcon = kind === 'audio' ? Headphones : Film
 
   const seriesOptions = categories.map((category) => ({
@@ -33,31 +35,31 @@ export default function CategorySidebar({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-stone-900">
-              Choose a book
+              {t('select.chooseTitle')}
             </p>
             <p className="truncate text-xs text-stone-400">
-              Pick a series and lesson
+              {t('select.chooseSubtitle')}
             </p>
           </div>
         </div>
 
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
           <SelectMenu
-            label="Series"
+            label={t('select.series')}
             icon={SeriesIcon}
             value={selectedId ?? ''}
             options={seriesOptions}
             onChange={onSelect}
-            placeholder="Choose a series"
+            placeholder={t('select.chooseSeries')}
             menuClassName="lg:w-80"
           />
           <SelectMenu
-            label="Book"
+            label={t('select.book')}
             icon={BookOpen}
             value={selectedCourse ?? ''}
             options={courseOptions}
             onChange={onSelectCourse}
-            placeholder="Choose a book"
+            placeholder={t('select.chooseBook')}
             disabled={courseOptions.length === 0}
             menuClassName="lg:w-80"
           />

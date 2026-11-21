@@ -10,13 +10,14 @@
  */
 
 export const AUDIO_FOLDERS = [
-  { name: 'Adults', id: '10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb' },
-  { name: 'Teens', id: '1gboaaStHmKWUCpAFNsGt35eYP9wj07V0' },
+  { name: 'Adults - English', id: '10tYI18xoQL0RzLr_CVKZuOgnNDgneYqb' },
+  { name: 'Teens - English', id: '1gboaaStHmKWUCpAFNsGt35eYP9wj07V0' },
+  { name: 'Adults - Español', id: '1UzDhAa1_TLDetfvQM1N0KQ7UhXxpO30-' },
 ]
 
 export const VIDEO_FOLDERS = [
-  { name: 'Adults', id: '1s5BCEVdz0-eM2tYCrBRwnTQeAWaiQuD6' },
-  { name: 'Teens', id: '1gEBUgQgGb-vIu-ltYg35ojnI1IBKUMt6' },
+  { name: 'Adults - English', id: '1s5BCEVdz0-eM2tYCrBRwnTQeAWaiQuD6' },
+  { name: 'Teens - English', id: '1gEBUgQgGb-vIu-ltYg35ojnI1IBKUMt6' },
 ]
 
 /**
