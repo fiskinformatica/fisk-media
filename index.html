@@ -8,7 +8,23 @@
       name="description"
       content="Audio and video library. Daily PIN access."
     />
-    <meta name="theme-color" content="#fbfbfb" />
+    <meta name="theme-color" content="#0c0a09" />
+    <script>
+      ;(function () {
+        try {
+          var theme = window.localStorage.getItem('media.theme.v1') === 'light'
+            ? 'light'
+            : 'dark'
+          document.documentElement.dataset.theme = theme
+          document.documentElement.style.colorScheme = theme
+          if (theme === 'light') {
+            document.querySelector('meta[name="theme-color"]').content = '#fbfbfb'
+          }
+        } catch (error) {
+          /* localStorage may be unavailable */
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://drive.usercontent.google.com" />
@@ -33,8 +49,8 @@
         }
       })()
     </script>
-    <script type="module" crossorigin src="./assets/index-D_prN_gr.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CiwdbrMl.css">
+    <script type="module" crossorigin src="./assets/index-1Xgo52Yd.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CPH8B9sF.css">
   </head>
   <body>
     <div id="root"></div>
