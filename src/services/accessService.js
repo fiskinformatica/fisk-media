@@ -11,6 +11,27 @@ const MS_PER_DAY = 86_400_000
 const PIN_STEP = 7
 const STAFF_PASSWORD_STORAGE_KEY = 'media.staff-password.v1'
 
+/**
+ * Remote config fetched from Firestore (config/access).
+ * Populated at app startup via initRemoteConfig(); env vars are the fallback.
+ */
+let _remoteConfig = null
+
+/**
+ * Called once at app startup after fetching from Firestore.
+ * @param {{ staffPin?: string, dailySalt?: string }} data
+ */
+export function initRemoteConfig(data) {
+  if (data && typeof data === 'object') {
+    _remoteConfig = data
+  }
+}
+
+/** Returns true when the remote config has been loaded from Firestore. */
+export function isRemoteConfigReady() {
+  return _remoteConfig !== null
+}
+
 function normalizePin(input) {
   return String(input ?? '')
     .replace(/\D/g, '')
@@ -58,8 +79,16 @@ function pinFromHash(hash) {
   return String((hash * 7 + 13) % 10_000).padStart(PIN_LENGTH, '0')
 }
 
+/**
+ * Returns the effective salt: Firestore value takes precedence, then env var.
+ */
+function getEffectiveSalt() {
+  const remote = _remoteConfig?.dailySalt
+  return typeof remote === 'string' && remote.length > 0 ? remote : SECRET_SALT
+}
+
 export function generateDailyPin(date = new Date()) {
-  return pinFromHash(hashSeed(SECRET_SALT) + dayNumber(date) * PIN_STEP)
+  return pinFromHash(hashSeed(getEffectiveSalt()) + dayNumber(date) * PIN_STEP)
 }
 
 /**
@@ -105,12 +134,23 @@ export function clearAuthorization() {
 
 /**
  * The admin can override the teacher PIN locally. A static site has no server,
- * so the override lives in this browser and falls back to the build-time value.
+ * so the override lives in this browser and falls back to the Firestore value,
+ * and then to the build-time env var.
  */
 export function getStaffPassword() {
+  // 1. Local override set via AdminPanel always wins
   const stored = readJson(STAFF_PASSWORD_STORAGE_KEY)
   const pin = normalizePin(stored?.pin)
-  return stored?.v === 1 && isPin(pin) ? pin : STAFF_PASSWORD
+  if (stored?.v === 1 && isPin(pin)) return pin
+
+  // 2. Firestore value (loaded at startup)
+  if (_remoteConfig?.staffPin) {
+    const remotePin = normalizePin(_remoteConfig.staffPin)
+    if (isPin(remotePin)) return remotePin
+  }
+
+  // 3. Env-var fallback (build-time)
+  return STAFF_PASSWORD
 }
 
 export function hasCustomStaffPassword() {
