@@ -14,13 +14,20 @@ import { useTranslation } from 'react-i18next'
 import ChangeNotice from './ChangeNotice.jsx'
 import FolderOrderPanel from './FolderOrderPanel.jsx'
 import SyncButton from './SyncButton.jsx'
-import { OWNER_PASSWORD, PIN_LENGTH } from '../config/access.js'
+import { PIN_LENGTH, STAFF_PASSWORD } from '../config/access.js'
 import { useLibrary } from '../hooks/useLibrary.js'
 import {
   clearStaffPassword,
   hasCustomStaffPassword,
   setStaffPassword,
+  updateRemoteStaffPin,
 } from '../services/accessService.js'
+import {
+  onAdminAuthStateChanged,
+  saveStaffPinToFirestore,
+  signInAdmin,
+  signOutAdmin,
+} from '../services/firebaseService.js'
 import { buildSnapshot, downloadSnapshot } from '../services/snapshotService.js'
 import { exportFolderOrders, resetLocalOrders } from '../utils/folderOrder.js'
 import { formatLastSync } from '../utils/format.js'
@@ -28,7 +35,9 @@ import { formatLastSync } from '../utils/format.js'
 export default function AdminPanel() {
   const { t } = useTranslation()
   const [unlocked, setUnlocked] = useState(false)
-  const [pin, setPin] = useState('')
+  const [email, setEmail] = useState('admin@fisk.com.br')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [published, setPublished] = useState(false)
   const [customStaffPin, setCustomStaffPin] = useState(hasCustomStaffPassword)
@@ -36,6 +45,7 @@ export default function AdminPanel() {
   const [confirmStaffPin, setConfirmStaffPin] = useState('')
   const [staffError, setStaffError] = useState(null)
   const [staffNotice, setStaffNotice] = useState(null)
+  const [isUpdatingStaff, setIsUpdatingStaff] = useState(false)
 
   const {
     library,
@@ -49,6 +59,13 @@ export default function AdminPanel() {
   } = useLibrary({ autoSync: unlocked })
 
   useEffect(() => {
+    const unsubscribe = onAdminAuthStateChanged((user) => {
+      setUnlocked(Boolean(user))
+    })
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
     if (!changes) return undefined
 
     const timeoutId = window.setTimeout(dismissChanges, 12_000)
@@ -59,18 +76,13 @@ export default function AdminPanel() {
     return value.replace(/\D/g, '').slice(0, PIN_LENGTH)
   }
 
-  function handleChange(event) {
-    setPin(cleanPin(event.target.value))
-    if (error) setError(null)
-  }
-
   function handleStaffPinField(event, setter) {
     setter(cleanPin(event.target.value))
     setStaffError(null)
     setStaffNotice(null)
   }
 
-  function handleStaffPinSubmit(event) {
+  async function handleStaffPinSubmit(event) {
     event.preventDefault()
 
     if (
@@ -88,40 +100,70 @@ export default function AdminPanel() {
       return
     }
 
-    setStaffPassword(newStaffPin)
-    setCustomStaffPin(true)
-    setNewStaffPin('')
-    setConfirmStaffPin('')
+    setIsUpdatingStaff(true)
     setStaffError(null)
-    setStaffNotice(t('admin.updated'))
-  }
+    setStaffNotice(null)
 
-  function handleStaffPinReset() {
-    clearStaffPassword()
-    setCustomStaffPin(false)
-    setNewStaffPin('')
-    setConfirmStaffPin('')
-    setStaffError(null)
-    setStaffNotice(t('admin.restored'))
-  }
-
-  function handleUnlock(event) {
-    event.preventDefault()
-
-    if (pin !== OWNER_PASSWORD) {
-      setError(t('admin.wrongPin'))
-      setPin('')
-      return
+    try {
+      await saveStaffPinToFirestore(newStaffPin)
+      updateRemoteStaffPin(newStaffPin)
+      setStaffPassword(newStaffPin)
+      setCustomStaffPin(true)
+      setNewStaffPin('')
+      setConfirmStaffPin('')
+      setStaffNotice(t('admin.updatedGlobal'))
+    } catch (err) {
+      console.error(err)
+      setStaffError(t('admin.updateFailed'))
+    } finally {
+      setIsUpdatingStaff(false)
     }
-
-    setError(null)
-    setPin('')
-    setUnlocked(true)
   }
 
-  function handleLock() {
+  async function handleStaffPinReset() {
+    setIsUpdatingStaff(true)
+    setStaffError(null)
+    setStaffNotice(null)
+
+    try {
+      await saveStaffPinToFirestore(STAFF_PASSWORD)
+      updateRemoteStaffPin(STAFF_PASSWORD)
+      clearStaffPassword()
+      setCustomStaffPin(false)
+      setNewStaffPin('')
+      setConfirmStaffPin('')
+      setStaffNotice(t('admin.restored'))
+    } catch (err) {
+      console.error(err)
+      setStaffError(t('admin.updateFailed'))
+    } finally {
+      setIsUpdatingStaff(false)
+    }
+  }
+
+  async function handleUnlock(event) {
+    event.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      await signInAdmin(email.trim(), password)
+      setPassword('')
+    } catch {
+      setError(t('admin.wrongCredentials'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleLock() {
+    try {
+      await signOutAdmin()
+    } catch {
+      /* ignore */
+    }
     setUnlocked(false)
-    setPin('')
+    setPassword('')
     setError(null)
     setPublished(false)
   }
@@ -172,31 +214,52 @@ export default function AdminPanel() {
       </div>
 
       {!unlocked ? (
-        <form onSubmit={handleUnlock} className="mt-4 max-w-sm" noValidate>
-          <label htmlFor="owner-pin" className="sr-only">
-            {t('admin.pinLabel')}
-          </label>
-          <input
-            id="owner-pin"
-            name="owner-pin"
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            pattern="[0-9]*"
-            maxLength={PIN_LENGTH}
-            value={pin}
-            onChange={handleChange}
-            placeholder="••••"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'owner-pin-error' : undefined}
-            className="field-control h-14 px-2 pl-[0.4em] text-center text-2xl font-semibold tracking-[0.4em] placeholder:tracking-[0.3em] placeholder:text-stone-300 sm:text-[26px]"
-          />
+        <form onSubmit={handleUnlock} className="mt-4 max-w-sm space-y-3" noValidate>
+          <div>
+            <label htmlFor="admin-email" className="eyebrow mb-1.5 block">
+              {t('admin.emailLabel')}
+            </label>
+            <input
+              id="admin-email"
+              name="admin-email"
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                if (error) setError(null)
+              }}
+              placeholder="admin@fisk.com.br"
+              className="field-control h-11 px-3 text-sm font-medium"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="admin-password" className="eyebrow mb-1.5 block">
+              {t('admin.passwordLabel')}
+            </label>
+            <input
+              id="admin-password"
+              name="admin-password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                if (error) setError(null)
+              }}
+              placeholder="••••••••"
+              className="field-control h-11 px-3 text-sm font-medium"
+            />
+          </div>
 
           {error && (
             <p
-              id="owner-pin-error"
+              id="admin-error"
               role="alert"
-              className="mt-3 flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
+              className="flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
             >
               <AlertCircle
                 className="mt-px h-3.5 w-3.5 shrink-0"
@@ -208,10 +271,10 @@ export default function AdminPanel() {
 
           <button
             type="submit"
-            disabled={pin.length !== PIN_LENGTH}
-            className="btn-primary mt-4 w-full"
+            disabled={loading || !email.trim() || !password}
+            className="btn-primary mt-3 w-full"
           >
-            {t('admin.unlock')}
+            {loading ? t('admin.signingIn') : t('admin.unlock')}
           </button>
 
           <p className="mt-3 max-w-sm text-xs leading-relaxed text-stone-400">
@@ -397,6 +460,7 @@ export default function AdminPanel() {
                 <button
                   type="submit"
                   disabled={
+                    isUpdatingStaff ||
                     newStaffPin.length !== PIN_LENGTH ||
                     confirmStaffPin.length !== PIN_LENGTH
                   }
@@ -409,6 +473,7 @@ export default function AdminPanel() {
                   <button
                     type="button"
                     onClick={handleStaffPinReset}
+                    disabled={isUpdatingStaff}
                     className="btn-secondary min-h-9 w-full py-2 text-xs sm:w-60"
                   >
                     <Undo2 className="h-4 w-4 shrink-0" aria-hidden="true" />

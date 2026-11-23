@@ -15,7 +15,6 @@ import AdminPanel from '../components/AdminPanel.jsx'
 import LanguageSelect from '../components/LanguageSelect.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import {
-  OWNER_PASSWORD,
   PIN_LENGTH,
   SECRET_SALT,
   STAFF_PASSWORD,
@@ -29,8 +28,7 @@ import { formatDuration } from '../utils/format.js'
 
 const USING_DEFAULTS =
   SECRET_SALT === 'CHANGE-THIS-SECRET' ||
-  STAFF_PASSWORD === '0000' ||
-  OWNER_PASSWORD === '9999'
+  STAFF_PASSWORD === '0000'
 
 function formatValidUntil(date) {
   return new Intl.DateTimeFormat('en-US', {
@@ -331,8 +329,7 @@ export default function TeachersPage() {
                   />
                   <span>
                     {t('teacher.defaultWarning', {
-                      names:
-                        'VITE_SECRET_SALT, VITE_STAFF_PASSWORD and VITE_OWNER_PASSWORD',
+                      names: 'VITE_SECRET_SALT and VITE_STAFF_PASSWORD',
                     })}
                   </span>
                 </div>

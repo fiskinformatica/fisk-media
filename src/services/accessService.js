@@ -32,6 +32,18 @@ export function isRemoteConfigReady() {
   return _remoteConfig !== null
 }
 
+export function getRemoteConfig() {
+  return _remoteConfig
+}
+
+export function updateRemoteStaffPin(newPin) {
+  if (_remoteConfig) {
+    _remoteConfig = { ..._remoteConfig, staffPin: newPin }
+  } else {
+    _remoteConfig = { staffPin: newPin }
+  }
+}
+
 function normalizePin(input) {
   return String(input ?? '')
     .replace(/\D/g, '')

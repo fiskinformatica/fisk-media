@@ -12,16 +12,9 @@
 export const SECRET_SALT =
   (import.meta.env.VITE_SECRET_SALT ?? '').trim() || 'CHANGE-THIS-SECRET'
 
-/** 4-digit PIN for the teacher's area. */
+/** 4-digit PIN fallback for the teacher's area (used only if Firestore is unreachable). */
 export const STAFF_PASSWORD =
   (import.meta.env.VITE_STAFF_PASSWORD ?? '').trim() || '0000'
-
-/**
- * Extra 4-digit PIN for the admin controls (sync and folder ordering). Keep it
- * different from the teacher PIN so only the owner can change the library.
- */
-export const OWNER_PASSWORD =
-  (import.meta.env.VITE_OWNER_PASSWORD ?? '').trim() || '9999'
 
 /** Kept for compatibility with cached modules; daily PINs have no grace period. */
 export const ACCEPT_PREVIOUS_MONTH = false
