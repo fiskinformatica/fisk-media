@@ -72,9 +72,35 @@ export default function LibraryBrowser({ onLock }) {
   const closeVideo = useCallback(() => setVideo(null), [])
 
   function handleTabChange(nextTab) {
+    if (nextTab === tab) return
+
+    const nextCategories =
+      (nextTab === 'audio' ? library?.audio : library?.video) ?? []
+
+    // Preserve the currently selected category by matching its name
+    const matchedCategory = selectedCategory
+      ? nextCategories.find((category) => category.name === selectedCategory.name)
+      : null
+
+    const targetCategory = matchedCategory ?? nextCategories[0] ?? null
+
     setTab(nextTab)
-    setSelectedId(null)
-    setSelectedCourseName(null)
+    setSelectedId(targetCategory?.id ?? null)
+
+    // Check if the current course exists in the target category
+    if (targetCategory && selectedCourseName) {
+      const hasCourse = targetCategory.items?.some(
+        (item) => getCourseName(item) === selectedCourseName,
+      )
+      setSelectedCourseName(hasCourse ? selectedCourseName : null)
+    } else {
+      setSelectedCourseName(null)
+    }
+
+    // When switching to video, pause audio so playback doesn't cut or overlap
+    if (nextTab === 'video' && player.isPlaying) {
+      player.pause()
+    }
   }
 
   function handleSelectCategory(id) {

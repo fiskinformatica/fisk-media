@@ -11,6 +11,7 @@ import {
 
 export default function VideoModal({ item, onClose }) {
   const { t } = useTranslation()
+  const [useDrivePreview, setUseDrivePreview] = useState(true)
   const sources = useMemo(
     () =>
       item.id
@@ -40,11 +41,14 @@ export default function VideoModal({ item, onClose }) {
   }, [onClose])
 
   function handleMediaError() {
-    setSourceIndex((index) => index + 1)
+    if (sourceIndex + 1 < sources.length) {
+      setSourceIndex((index) => index + 1)
+    } else {
+      setUseDrivePreview(true)
+    }
   }
 
   const source = sources[sourceIndex]
-  const useDrivePreview = sources.length === 0 || sourceIndex >= sources.length
   const location = [
     item.categoryName,
     ...(Array.isArray(item.path) ? item.path : []),
