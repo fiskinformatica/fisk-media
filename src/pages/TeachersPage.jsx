@@ -8,27 +8,23 @@ import {
   LogOut,
   ShieldCheck,
   Timer,
-  TriangleAlert,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import AdminPanel from '../components/AdminPanel.jsx'
 import LanguageSelect from '../components/LanguageSelect.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
-import {
-  PIN_LENGTH,
-  SECRET_SALT,
-  STAFF_PASSWORD,
-} from '../config/access.js'
+import { PIN_LENGTH } from '../config/access.js'
 import {
   clearAuthorization,
   getAdminPinInfo,
-  getStaffPassword,
+  validateStaffPinAsync,
 } from '../services/accessService.js'
+import {
+  onAdminAuthStateChanged,
+  signInAdmin,
+  signOutAdmin,
+} from '../services/firebaseService.js'
 import { formatDuration } from '../utils/format.js'
-
-const USING_DEFAULTS =
-  SECRET_SALT === 'CHANGE-THIS-SECRET' ||
-  STAFF_PASSWORD === '0000'
 
 function formatValidUntil(date) {
   return new Intl.DateTimeFormat('en-US', {
@@ -97,17 +93,6 @@ function TeacherHeader({ onLogout }) {
   )
 }
 
-function SecurityNote() {
-  const { t } = useTranslation()
-
-  return (
-    <div className="flex items-start gap-2 px-2 text-xs leading-relaxed text-stone-400 sm:text-sm">
-      <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <p>{t('teacher.securityNote')}</p>
-    </div>
-  )
-}
-
 export default function TeachersPage() {
   const { t } = useTranslation()
   const [pin, setPin] = useState('')
@@ -115,6 +100,22 @@ export default function TeachersPage() {
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [isAdminMode, setIsAdminMode] = useState(false)
+  const [adminEmail, setAdminEmail] = useState('admin@fisk.com.br')
+  const [adminPassword, setAdminPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [isFirebaseAdmin, setIsFirebaseAdmin] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = onAdminAuthStateChanged((user) => {
+      const hasUser = Boolean(user)
+      setIsFirebaseAdmin(hasUser)
+      if (hasUser && !pinInfo) {
+        setPinInfo(getAdminPinInfo())
+      }
+    })
+    return unsubscribe
+  }, [pinInfo])
 
   useEffect(() => {
     if (!pinInfo) return undefined
@@ -138,12 +139,16 @@ export default function TeachersPage() {
     if (error) setError(null)
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    setSubmitting(true)
+    setError(null)
 
-    if (pin !== getStaffPassword()) {
+    const isValid = await validateStaffPinAsync(pin)
+    if (!isValid) {
       setError(t('teacher.wrongPin'))
       setPin('')
+      setSubmitting(false)
       return
     }
 
@@ -151,6 +156,24 @@ export default function TeachersPage() {
     setPin('')
     setNow(Date.now())
     setPinInfo(getAdminPinInfo())
+    setSubmitting(false)
+  }
+
+  async function handleAdminSubmit(event) {
+    event.preventDefault()
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      await signInAdmin(adminEmail.trim(), adminPassword)
+      setAdminPassword('')
+      setNow(Date.now())
+      setPinInfo(getAdminPinInfo())
+    } catch {
+      setError(t('admin.wrongCredentials'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleCopy() {
@@ -166,7 +189,14 @@ export default function TeachersPage() {
     window.setTimeout(() => setCopied(false), 2000)
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    if (isFirebaseAdmin) {
+      try {
+        await signOutAdmin()
+      } catch {
+        /* ignore */
+      }
+    }
     clearAuthorization()
     setPinInfo(null)
     setPin('')
@@ -193,66 +223,168 @@ export default function TeachersPage() {
               aria-hidden="true"
             />
 
+            {/* Mode switch: Teacher PIN or Admin Login */}
+            <div className="relative mb-6 flex rounded-xl bg-stone-100 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdminMode(false)
+                  setError(null)
+                }}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                  !isAdminMode
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-stone-500 hover:text-ink'
+                }`}
+              >
+                {t('teacher.teacher')} (PIN)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdminMode(true)
+                  setError(null)
+                }}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                  isAdminMode
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-stone-500 hover:text-ink'
+                }`}
+              >
+                {t('admin.title')}
+              </button>
+            </div>
+
             <div className="relative mb-6 text-center">
               <span className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 ring-1 ring-brand-200/60">
                 <ShieldCheck className="h-5 w-5" aria-hidden="true" />
               </span>
-              <p className="eyebrow text-brand-600">{t('teacher.staffAccess')}</p>
+              <p className="eyebrow text-brand-600">
+                {isAdminMode ? t('admin.title') : t('teacher.staffAccess')}
+              </p>
               <h1 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                {t('teacher.title')}
+                {isAdminMode ? t('admin.title') : t('teacher.title')}
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-stone-500">
-                {t('teacher.subtitle')}
+                {isAdminMode
+                  ? t('admin.lockedSubtitle')
+                  : t('teacher.subtitle')}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="relative">
-              <label htmlFor="teacher-pin" className="sr-only">
-                {t('teacher.pinLabel')}
-              </label>
-              <input
-                id="teacher-pin"
-                name="teacher-pin"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                pattern="[0-9]*"
-                maxLength={PIN_LENGTH}
-                autoFocus
-                value={pin}
-                onChange={handleChange}
-                placeholder="••••"
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'teacher-pin-error' : undefined}
-                className="field-control h-14 px-2 pl-[0.4em] text-center text-2xl font-semibold tracking-[0.4em] text-ink placeholder:text-stone-400 focus:border-brand-500 focus:bg-surface sm:text-[26px]"
-              />
+            {!isAdminMode ? (
+              <form onSubmit={handleSubmit} noValidate className="relative">
+                <label htmlFor="teacher-pin" className="sr-only">
+                  {t('teacher.pinLabel')}
+                </label>
+                <input
+                  id="teacher-pin"
+                  name="teacher-pin"
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  pattern="[0-9]*"
+                  maxLength={PIN_LENGTH}
+                  autoFocus
+                  value={pin}
+                  onChange={handleChange}
+                  placeholder="••••"
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'teacher-pin-error' : undefined}
+                  className="field-control h-14 px-2 pl-[0.4em] text-center text-2xl font-semibold tracking-[0.4em] text-ink placeholder:text-stone-400 focus:border-brand-500 focus:bg-surface sm:text-[26px]"
+                />
 
-              {error && (
-                <p
-                  id="teacher-pin-error"
-                  role="alert"
-                  className="mt-3 flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
+                {error && (
+                  <p
+                    id="teacher-pin-error"
+                    role="alert"
+                    className="mt-3 flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
+                  >
+                    <AlertCircle
+                      className="mt-px h-3.5 w-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting || pin.length !== PIN_LENGTH}
+                  className="btn-primary mt-5 w-full"
                 >
-                  <AlertCircle
-                    className="mt-px h-3.5 w-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  {error}
+                  {submitting ? '...' : t('common.signIn')}
+                </button>
+
+                <p className="relative mt-5 text-center text-xs leading-relaxed text-stone-400">
+                  {t('teacher.footer')}
                 </p>
-              )}
+              </form>
+            ) : (
+              <form onSubmit={handleAdminSubmit} noValidate className="relative space-y-3">
+                <div>
+                  <label htmlFor="admin-direct-email" className="eyebrow mb-1.5 block">
+                    {t('admin.emailLabel')}
+                  </label>
+                  <input
+                    id="admin-direct-email"
+                    name="admin-email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={adminEmail}
+                    onChange={(event) => {
+                      setAdminEmail(event.target.value)
+                      if (error) setError(null)
+                    }}
+                    placeholder="admin@fisk.com.br"
+                    className="field-control h-11 px-3 text-sm font-medium"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={pin.length !== PIN_LENGTH}
-                className="btn-primary mt-5 w-full"
-              >
-                {t('common.signIn')}
-              </button>
-            </form>
+                <div>
+                  <label htmlFor="admin-direct-password" className="eyebrow mb-1.5 block">
+                    {t('admin.passwordLabel')}
+                  </label>
+                  <input
+                    id="admin-direct-password"
+                    name="admin-password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={adminPassword}
+                    onChange={(event) => {
+                      setAdminPassword(event.target.value)
+                      if (error) setError(null)
+                    }}
+                    placeholder="••••••••"
+                    className="field-control h-11 px-3 text-sm font-medium"
+                  />
+                </div>
 
-            <p className="relative mt-5 text-center text-xs leading-relaxed text-stone-400">
-              {t('teacher.footer')}
-            </p>
+                {error && (
+                  <p
+                    id="admin-direct-error"
+                    role="alert"
+                    className="flex min-w-0 items-start gap-1.5 text-xs leading-relaxed break-words text-red-600"
+                  >
+                    <AlertCircle
+                      className="mt-px h-3.5 w-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting || !adminEmail.trim() || !adminPassword}
+                  className="btn-primary mt-2 w-full"
+                >
+                  {submitting ? t('admin.signingIn') : t('admin.unlock')}
+                </button>
+              </form>
+            )}
           </div>
 
           <a
@@ -320,23 +452,7 @@ export default function TeachersPage() {
                   })}
                 </p>
               </div>
-
-              {USING_DEFAULTS && (
-                <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200/70 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800">
-                  <TriangleAlert
-                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
-                    aria-hidden="true"
-                  />
-                  <span>
-                    {t('teacher.defaultWarning', {
-                      names: 'VITE_SECRET_SALT and VITE_STAFF_PASSWORD',
-                    })}
-                  </span>
-                </div>
-              )}
             </section>
-
-            <SecurityNote />
           </div>
 
           <AdminPanel />

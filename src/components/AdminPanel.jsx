@@ -483,10 +483,6 @@ export default function AdminPanel() {
                   </button>
                 )}
               </div>
-
-              <p className="text-xs leading-relaxed text-stone-400">
-                {t('admin.savedLocal')}
-              </p>
             </form>
           </div>
 

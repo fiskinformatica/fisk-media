@@ -1,13 +1,5 @@
 /**
  * Access configuration.
- *
- * IMPORTANT: this is a static site. These values are downloaded by every
- * visitor. The PINs are a casual access control, not a security boundary
- * against technical users. Change the defaults before publishing. See
- * README.md for details.
- *
- * Configure them in .env (or in the GitHub Actions secrets) instead of editing
- * this file. The fallbacks are only here to keep local development working.
  */
 export const SECRET_SALT =
   (import.meta.env.VITE_SECRET_SALT ?? '').trim() || 'CHANGE-THIS-SECRET'

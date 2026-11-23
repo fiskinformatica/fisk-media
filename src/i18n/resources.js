@@ -70,10 +70,6 @@ const en = {
     pinCopied: 'PIN copied',
     newPinIn: 'New PIN in {{time}}',
     wrongPin: 'Wrong PIN.',
-    defaultWarning:
-      'Default secrets in use. Set {{names}} in .env before publishing.',
-    securityNote:
-      "This is casual access control. On a static site, PINs and secrets can be inspected in the browser. Don't use them for strong security. Teacher PIN changes made in Admin apply only to this browser.",
   },
   admin: {
     title: 'Admin',
@@ -241,10 +237,6 @@ const es = {
     pinCopied: 'PIN copiado',
     newPinIn: 'Nuevo PIN en {{time}}',
     wrongPin: 'PIN incorrecto.',
-    defaultWarning:
-      'Se usan secretos predeterminados. Configura {{names}} en .env antes de publicar.',
-    securityNote:
-      'Este es un control de acceso casual. En un sitio estático, los PIN y secretos se pueden inspeccionar en el navegador. No lo uses para seguridad fuerte. Los cambios del PIN del profesor en Admin solo aplican a este navegador.',
   },
   admin: {
     title: 'Administración',
@@ -412,10 +404,6 @@ const pt = {
     pinCopied: 'PIN copiado',
     newPinIn: 'Novo PIN em {{time}}',
     wrongPin: 'PIN errado.',
-    defaultWarning:
-      'Segredos padrão em uso. Defina {{names}} no .env antes de publicar.',
-    securityNote:
-      'Este é um controle de acesso casual. Em um site estático, PINs e segredos podem ser inspecionados no navegador. Não use para segurança forte. Alterações do PIN do professor no Admin valem apenas neste navegador.',
   },
   admin: {
     title: 'Admin',

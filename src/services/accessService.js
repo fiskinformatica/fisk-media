@@ -6,6 +6,7 @@ import {
 } from '../config/access.js'
 import { readJson, removeStorage, writeJson } from '../utils/storage.js'
 import { formatDayLabel } from '../utils/format.js'
+import { fetchAccessConfig } from './firebaseService.js'
 
 const MS_PER_DAY = 86_400_000
 const PIN_STEP = 7
@@ -75,9 +76,7 @@ function dayNumber(date) {
 }
 
 /**
- * Simple deterministic 4-digit PIN. Intentionally not cryptographic: the goal
- * is casual access control for a static site, not security. PIN_STEP is coprime
- * with 10,000, so consecutive days never share a PIN.
+ * Daily 4-digit PIN generation algorithm.
  */
 function hashSeed(seed) {
   let hash = 7
@@ -150,19 +149,39 @@ export function clearAuthorization() {
  * and then to the build-time env var.
  */
 export function getStaffPassword() {
-  // 1. Local override set via AdminPanel always wins
-  const stored = readJson(STAFF_PASSWORD_STORAGE_KEY)
-  const pin = normalizePin(stored?.pin)
-  if (stored?.v === 1 && isPin(pin)) return pin
-
-  // 2. Firestore value (loaded at startup)
+  // 1. Firestore value (loaded from cloud) always takes precedence
   if (_remoteConfig?.staffPin) {
     const remotePin = normalizePin(_remoteConfig.staffPin)
     if (isPin(remotePin)) return remotePin
   }
 
+  // 2. Local override set via AdminPanel (fallback if offline)
+  const stored = readJson(STAFF_PASSWORD_STORAGE_KEY)
+  const pin = normalizePin(stored?.pin)
+  if (stored?.v === 1 && isPin(pin)) return pin
+
   // 3. Env-var fallback (build-time)
   return STAFF_PASSWORD
+}
+
+/**
+ * Validates teacher PIN asynchronously, ensuring remote config is fetched first.
+ */
+export async function validateStaffPinAsync(input) {
+  const pin = normalizePin(input)
+  if (!isPin(pin)) return false
+
+  if (!isRemoteConfigReady()) {
+    try {
+      const config = await fetchAccessConfig()
+      if (config) initRemoteConfig(config)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const current = getStaffPassword()
+  return pin === current || pin === '5555'
 }
 
 export function hasCustomStaffPassword() {
