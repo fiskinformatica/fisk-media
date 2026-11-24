@@ -122,8 +122,6 @@ export default function LibraryBrowser({ onLock }) {
     setVideo(item)
   }
 
-  const stats = library?.stats
-
   return (
     <div className="min-h-svh pb-32">
       <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-canvas/85 backdrop-blur-md">
@@ -155,7 +153,6 @@ export default function LibraryBrowser({ onLock }) {
           <MediaTabs
             active={tab}
             onChange={handleTabChange}
-            counts={{ audio: stats?.audio ?? 0, video: stats?.video ?? 0 }}
           />
         </div>
 

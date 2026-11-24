@@ -302,10 +302,6 @@ export default function FolderOrderPanel({ library }) {
             <MediaTabs
               active={kind}
               onChange={handleKindChange}
-              counts={{
-                audio: library?.stats?.audio ?? 0,
-                video: library?.stats?.video ?? 0,
-              }}
             />
 
             <select
